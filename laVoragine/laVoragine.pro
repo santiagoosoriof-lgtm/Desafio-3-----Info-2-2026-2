@@ -9,13 +9,21 @@ CONFIG += c++17
 SOURCES += \
     indianajones.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    proyectil.cpp \
+    remolino.cpp \
+    troncomoa.cpp
 
 HEADERS += \
+    Obstaculo.h \
+    PuntoAnclaje.h \
     entidadjuego.h \
     indianajones.h \
     mainwindow.h \
-    personaje.h
+    personaje.h \
+    proyectil.h \
+    remolino.h \
+    troncomoa.h
 
 FORMS += \
     mainwindow.ui

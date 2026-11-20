@@ -2,6 +2,7 @@
 #define INDIANAPERSONAJE_H
 
 #include "Personaje.h"
+#include "PuntoAnclaje.h"
 
 class IndianaJones : public Personaje {
 private:
@@ -24,7 +25,9 @@ public:
 
     // movimientos especificos de indy
     void activarModoEnfurecido();
+    bool intentarEnganchar(const PuntoAnclaje& punto);
     void engancharLatigo(float pX, float pY, float longitud, float anguloInicial);
+    void impulsarPendulo(float direccion, float fuerzaImpulso, float dt);
     void soltarLatigo();
     void saltar(float fuerzaSalto);
 

@@ -19,7 +19,7 @@ void IndianaJones::actualizarFisica(float dt) {
 
     // Pendulo simple si esta usando el latigo
     if (estaColgando) {
-        // Ecuacion:aceleracion angular alpha = -(g / L) * sin(theta)
+        // Ecuacion: aceleracion angular alpha = -(g / L) * sin(theta)
         float aceleracionAngular = -(GRAVEDAD / longitudLatigo) * std::sin(anguloPendulo);
         velAngular += aceleracionAngular * dt;
         anguloPendulo += velAngular * dt;
@@ -49,6 +49,22 @@ void IndianaJones::activarModoEnfurecido() {
     tiempoEnfurecido = 10.0f;
 }
 
+bool IndianaJones::intentarEnganchar(const PuntoAnclaje& punto) {
+    // Si ya esta colgado, no vuelve a enganchar
+    if (estaColgando) return false;
+
+    float dx = posX - punto.x;
+    float dy = posY - punto.y;
+    float distancia = std::sqrt(dx * dx + dy * dy);
+
+    if (distancia <= punto.radioAlcance && distancia > 5.0f && dy > 0.0f) {
+        float anguloInicial = std::atan2(dx, dy);
+        engancharLatigo(punto.x, punto.x, distancia, anguloInicial);
+        return true;
+    }
+    return false;
+}
+
 void IndianaJones::engancharLatigo(float pX, float pY, float longitud, float anguloInicial) {
     estaColgando = true;
     pivoteX = pX;
@@ -60,6 +76,13 @@ void IndianaJones::engancharLatigo(float pX, float pY, float longitud, float ang
     velY = 0.0f;
 }
 
+void IndianaJones::impulsarPendulo(float direccion, float fuerzaImpulso, float dt) {
+    // Permite al jugador darse impulso hacia izquierda (-1) o derecha (1) mientras cuelga
+    if (estaColgando) {
+        velAngular += (direccion * fuerzaImpulso / longitudLatigo) * dt;
+    }
+}
+
 void IndianaJones::soltarLatigo() {
     if (!estaColgando) return;
     estaColgando = false;
@@ -67,6 +90,7 @@ void IndianaJones::soltarLatigo() {
     float velTangencial = velAngular * longitudLatigo;
     velX = velTangencial * std::cos(anguloPendulo);
     velY = -velTangencial * std::sin(anguloPendulo);
+    longitudLatigo = 100.0f;
 }
 
 void IndianaJones::saltar(float fuerzaSalto) {
