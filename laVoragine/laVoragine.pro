@@ -7,6 +7,8 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    Pergamino.cpp \
+    capatazmayor.cpp \
     indianajones.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -15,8 +17,13 @@ SOURCES += \
     troncomoa.cpp
 
 HEADERS += \
+    Corazon.h \
+    ObjetoRecolectable.h \
     Obstaculo.h \
+    Palanca.h \
+    Pergamino.h \
     PuntoAnclaje.h \
+    capatazmayor.h \
     entidadjuego.h \
     indianajones.h \
     mainwindow.h \

@@ -9,10 +9,14 @@ protected:
     float velocidadBase;
     float velX;
     float velY;
+    int salud;
+    int saludMaxima;
+
 
 public:
     Personaje(float x, float y, float w, float h, int saludInicial, float vel)
-        : EntidadJuego(x, y, w, h), salud(saludInicial), velocidadBase(vel), velX(0.0f), velY(0.0f) {}
+        : EntidadJuego(x, y, w, h), salud(saludInicial), saludMaxima(saludInicial),
+        velocidadBase(vel), velX(0.0f), velY(0.0f) {}
 
     virtual ~Personaje() = default;
 
@@ -26,6 +30,14 @@ public:
         if (salud <= 0) {
             salud = 0;
             desactivar();
+        }
+    }
+
+    virtual void curar(int cantidad) {
+        if (!activa || cantidad <= 0) return;
+        salud += cantidad;
+        if (salud > saludMaxima) {
+            salud = saludMaxima;
         }
     }
 

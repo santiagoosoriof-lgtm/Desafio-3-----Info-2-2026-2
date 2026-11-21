@@ -5,7 +5,8 @@ IndianaJones::IndianaJones(float x, float y, float w, float h)
     : Personaje(x, y, w, h, 100, 200.0f),
     estaColgando(false), pivoteX(0.0f), pivoteY(0.0f),
     longitudLatigo(100.0f), anguloPendulo(0.0f), velAngular(0.0f),
-    modoEnfurecido(false), tiempoEnfurecido(0.0f) {}
+    modoEnfurecido(false), tiempoEnfurecido(0.0f),
+    puedeEnfurecerse(true) {}
 
 void IndianaJones::actualizarFisica(float dt) {
     // temporizador del estado Enfurecido (10s)
@@ -39,9 +40,22 @@ void IndianaJones::actualizarFisica(float dt) {
 }
 
 void IndianaJones::recibirDano(int cantidad) {
-    // En modo enfurecido es inmune a daño
-    if (modoEnfurecido) return;
+    if (modoEnfurecido) return; // Inmune mientras esta enfurecido
+
     Personaje::recibirDano(cantidad);
+
+    // Si sigue vivo pero con salud crítica (<= 30%), se enfurece automáticamente
+    if (activa && salud > 0 && salud <= 30 && puedeEnfurecerse) {
+        activarModoEnfurecido();
+        puedeEnfurecerse = false;
+    }
+}
+
+void IndianaJones::curar(int cantidad) {
+    Personaje::curar(cantidad);
+    if (salud > 30) {
+        puedeEnfurecerse = true; // Vuelve a estar disponible si recupera salud
+    }
 }
 
 void IndianaJones::activarModoEnfurecido() {

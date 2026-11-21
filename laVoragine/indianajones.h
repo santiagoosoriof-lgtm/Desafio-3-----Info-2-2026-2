@@ -14,6 +14,7 @@ private:
     float velAngular;
 
     bool modoEnfurecido;
+    bool puedeEnfurecerse;      // Evita que se reactive en bucle mientras siga herido
     float tiempoEnfurecido; // Temporizador de 10 segundos
     const float GRAVEDAD = 450.0f; // Escala en píxeles/s^2
 
@@ -22,6 +23,7 @@ public:
 
     void actualizarFisica(float dt) override;
     void recibirDano(int cantidad) override;
+    void curar(int cantidad) override;
 
     // movimientos especificos de indy
     void activarModoEnfurecido();
@@ -30,6 +32,7 @@ public:
     void impulsarPendulo(float direccion, float fuerzaImpulso, float dt);
     void soltarLatigo();
     void saltar(float fuerzaSalto);
+
 
     // Consultas de estado del personaje
     bool esEnfurecido() const { return modoEnfurecido; }
