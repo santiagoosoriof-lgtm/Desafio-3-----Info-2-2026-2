@@ -9,6 +9,7 @@ CONFIG += c++17
 SOURCES += \
     Pergamino.cpp \
     capatazmayor.cpp \
+    gestornivel1.cpp \
     indianajones.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -25,6 +26,7 @@ HEADERS += \
     PuntoAnclaje.h \
     capatazmayor.h \
     entidadjuego.h \
+    gestornivel1.h \
     indianajones.h \
     mainwindow.h \
     personaje.h \

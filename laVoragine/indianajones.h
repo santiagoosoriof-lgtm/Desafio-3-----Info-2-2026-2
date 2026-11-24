@@ -7,15 +7,19 @@
 class IndianaJones : public Personaje {
 private:
     bool estaColgando;
+    bool modoEnfurecido;
+    bool puedeEnfurecerse;
+    bool estaAtacando;
+    bool golpeAplicado;
+    int direccionMirada;
     float pivoteX;
     float pivoteY;
     float longitudLatigo;
     float anguloPendulo;
     float velAngular;
-
-    bool modoEnfurecido;
-    bool puedeEnfurecerse;      // Evita que se reactive en bucle mientras siga herido
-    float tiempoEnfurecido; // Temporizador de 10 segundos
+    float tiempoEnfurecido;
+    float tiempoAtaque;
+    float cooldownAtaque;
     const float GRAVEDAD = 450.0f; // Escala en píxeles/s^2
 
 public:
@@ -33,11 +37,18 @@ public:
     void soltarLatigo();
     void saltar(float fuerzaSalto);
 
+    // Combate con latigo (Nivel 2)
+    void atacarConLatigo();
+    void setDireccionMirada(int dir) { if (dir != 0) direccionMirada = (dir > 0) ? 1 : -1; }
+    bool registrarImpactoLatigo();
 
     // Consultas de estado del personaje
     bool esEnfurecido() const { return modoEnfurecido; }
     bool puedeVerTrayectorias() const { return !modoEnfurecido; }
     bool estaUsandoPendulo() const { return estaColgando; }
+    bool getEstaAtacando() const { return estaAtacando; }
+    int getDireccionMirada() const { return direccionMirada; }
+    int getDanoLatigo() const { return modoEnfurecido ? 50 : 30; }
 };
 
 #endif // INDIANAPERSONAJE_H

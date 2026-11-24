@@ -3,12 +3,32 @@
 
 IndianaJones::IndianaJones(float x, float y, float w, float h)
     : Personaje(x, y, w, h, 100, 200.0f),
-    estaColgando(false), pivoteX(0.0f), pivoteY(0.0f),
-    longitudLatigo(100.0f), anguloPendulo(0.0f), velAngular(0.0f),
-    modoEnfurecido(false), tiempoEnfurecido(0.0f),
-    puedeEnfurecerse(true) {}
+    estaColgando(false),
+    modoEnfurecido(false),
+    puedeEnfurecerse(true),
+    estaAtacando(false),
+    golpeAplicado(false),
+    direccionMirada(1),
+    pivoteX(0.0f),
+    pivoteY(0.0f),
+    longitudLatigo(100.0f),
+    anguloPendulo(0.0f),
+    velAngular(0.0f),
+    tiempoEnfurecido(0.0f),
+    tiempoAtaque(0.0f),
+    cooldownAtaque(0.0f) {}
 
 void IndianaJones::actualizarFisica(float dt) {
+
+    if (cooldownAtaque > 0.0f) cooldownAtaque -= dt;
+    if (estaAtacando) {
+        tiempoAtaque -= dt;
+        if (tiempoAtaque <= 0.0f) {
+            estaAtacando = false;
+            tiempoAtaque = 0.0f;
+        }
+    }
+
     // temporizador del estado Enfurecido (10s)
     if (modoEnfurecido) {
         tiempoEnfurecido -= dt;
@@ -113,4 +133,22 @@ void IndianaJones::saltar(float fuerzaSalto) {
         float factorSalto = modoEnfurecido ? 0.75f : 1.0f;
         velY = -fuerzaSalto * factorSalto;
     }
+}
+
+void IndianaJones::atacarConLatigo() {
+    // No puede atacar si ya está atacando, en cooldown o colgado del techo
+    if (estaColgando || estaAtacando || cooldownAtaque > 0.0f) return;
+
+    estaAtacando = true;
+    golpeAplicado = false;
+    tiempoAtaque = 0.25f;   // Duracion latigazo
+    cooldownAtaque = 0.55f; // Tiempo mínimo entre ataques
+}
+
+bool IndianaJones::registrarImpactoLatigo() {
+    if (estaAtacando && !golpeAplicado) {
+        golpeAplicado = true;
+        return true;
+    }
+    return false;
 }

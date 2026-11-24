@@ -6,11 +6,11 @@
 class Personaje : public EntidadJuego {
 protected:
     int salud;
+    int saludMaxima;
     float velocidadBase;
     float velX;
     float velY;
-    int salud;
-    int saludMaxima;
+
 
 
 public:
