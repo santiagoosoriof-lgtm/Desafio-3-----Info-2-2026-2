@@ -10,6 +10,7 @@ SOURCES += \
     Pergamino.cpp \
     capatazmayor.cpp \
     gestornivel1.cpp \
+    gestornivel2.cpp \
     indianajones.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -27,6 +28,7 @@ HEADERS += \
     capatazmayor.h \
     entidadjuego.h \
     gestornivel1.h \
+    gestornivel2.h \
     indianajones.h \
     mainwindow.h \
     personaje.h \
@@ -41,3 +43,6 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    sprites.qrc

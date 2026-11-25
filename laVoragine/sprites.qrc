@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>0. SaludCapataz.png</file>
+        <file>0. Corazon.png</file>
+        <file>0. Fondo inivel II.png</file>
+        <file>0. Fondo Nivel I.png</file>
+        <file>0. Palancader.png</file>
+    </qresource>
+</RCC>
