@@ -106,6 +106,7 @@ void MainWindow::cargarSprites() {
     sprites["balsa_der"]      = QPixmap(":/0. Balsa derecha.png");
     sprites["balsa_izq"]      = QPixmap(":/0. Balsa izquierda.png");
     sprites["balsa_impacto"]  = QPixmap(":/0. Balsa impacto.png");
+    sprites["balsa_enfurecida"]    = QPixmap(":/0. Balsa de frentepoder.png");
 
     sprites["tronco_centro"]  = QPixmap(":/00. Tronco.png");
     sprites["tronco_der"]     = QPixmap(":/00.Tronco derecha.png");
@@ -119,11 +120,17 @@ void MainWindow::cargarSprites() {
     sprites["palanca_der"]    = QPixmap(":/0. Palancader.png");
     sprites["pergamino"]      = QPixmap(":/00. pergamino.png");
 
+    // Sprites de Modo Enfurecido (Nivel 1 y Nivel 2)
+
 
     // --- Nivel 2: Indiana Jones ---
     sprites["indy_parado"]    = QPixmap(":/00. Indy parado.png");
     sprites["indy_camina1"]   = QPixmap(":/00. Indy camina1.png");
     sprites["indy_camina2"]   = QPixmap(":/00. Indy camina2.png");
+    sprites["indy_enfurecido1"]    = QPixmap(":/00. Indy camina1poder.png");
+    sprites["indy_enfurecido2"]    = QPixmap(":/00. Indy camina2poder.png");
+
+
     sprites["pendulo_centro"] = QPixmap(":/00.Pendulo centro.png");
     sprites["pendulo_der"]    = QPixmap(":/00.Penduloder.png");
     sprites["pendulo_izq"]    = QPixmap(":/00.Penduloizq.png");
@@ -206,9 +213,11 @@ void MainWindow::mostrarPantallaFinal(const QString &mensaje) {
     timerJuego->stop();
     nivelActivo = 0;
     teclasPresionadas.clear();
+    musicaFondo-> stop();
+
     ui->lblResultadoFinal->setText(mensaje);
-    ui->stackedWidget->setCurrentIndex(3);
-    musicaFondo->stop();
+    ui->lblResultadoFinal->setVisible(true);
+    ui->stackedWidget->setCurrentWidget(ui->pageFinal);
 }
 
 void MainWindow::on_btnReintentar_clicked() {
@@ -248,11 +257,17 @@ void MainWindow::actualizarJuego() {
         dibujarNivel1();
 
         if (nivel1->getEstado() == EstadoNivel::VICTORIA) {
-            iniciarNivel2();
+            timerJuego->stop();
+            nivelActivo = 0;
+            ui->stackedWidget->setCurrentWidget(ui->pageTransicion);; // Pantalla de transición al Nivel 2
         } else if (nivel1->getEstado() == EstadoNivel::DERROTA_TIEMPO) {
-            mostrarPantallaFinal("¡Se acabó el tiempo en el Río Putumayo!");
+            mostrarPantallaFinal("¡LA SELVA TE HA DEVORADO!\n\n"
+                                 "El tiempo se agotó y la corriente del Putumayo arrastró los pergaminos.\n"
+                                 "La Chorrera sigue oculta en la espesura.");
         } else if (nivel1->getEstado() == EstadoNivel::DERROTA_SALUD) {
-            mostrarPantallaFinal("¡La balsa fue destruida en los rápidos!");
+            mostrarPantallaFinal("¡NAUFRAGIO EN EL PUTUMAYO!\n\n"
+                                 "Los rápidos y los disparos de los capataces destruyeron tu balsa\n"
+                                 "antes de poder completar el mapa.");
         }
     }
     else if (nivelActivo == 2 && nivel2) {
@@ -270,9 +285,12 @@ void MainWindow::actualizarJuego() {
         dibujarNivel2();
 
         if (nivel2->getEstado() == EstadoNivel::VICTORIA) {
-            mostrarPantallaFinal("¡Prisioneros liberados! Has escapado de La Chorrera.");
+            mostrarPantallaFinal("¡PRISIONEROS LIBERADOS!\n\n"
+                                 "Has vencido a la Casa Arana y escapado con vida de La Chorrera.");
         } else if (nivel2->getEstado() == EstadoNivel::DERROTA_SALUD) {
-            mostrarPantallaFinal("¡Has caido en La Chorrera! Intentalo de nuevo.");
+            mostrarPantallaFinal("¡CAPTURADO EN LA CHORRERA!\n\n"
+                                 "Los hombres de la Casa Arana han frustrado el rescate,\n"
+                                 "el Capataz ya teconoce... ¿Te atreves a desafiarlo de nuevo?");
         }
     }
 }
@@ -418,7 +436,7 @@ void MainWindow::dibujarNivel1() {
     // 6. Balsa de Indiana Jones (segun dirección o estado Enfurecido/Impacto)
     QString claveBalsa = "balsa_frente";
     if (indy->esEnfurecido()) {
-        claveBalsa = "balsa_impacto";
+        claveBalsa = "balsa_enfurecida";
     } else if (dirBalsaX < 0) {
         claveBalsa = "balsa_izq";
     } else if (dirBalsaX > 0) {
@@ -557,13 +575,18 @@ void MainWindow::dibujarNivel2() {
 
     // 7. Indiana Jones animado (parado, camina1/2, péndulo izq/centro/der) + Latigazo
     bool indyMiraIzq = (indy->getDireccionMirada() < 0);
-    QString claveIndy = "indy_parado";
+    QString claveIndy = indy->esEnfurecido() ? "indy_enfurecido1" : "indy_parado";
     if (indy->estaUsandoPendulo()) {
         if (indy->getVelX() < -15.0f) claveIndy = "pendulo_izq";
         else if (indy->getVelX() > 15.0f) claveIndy = "pendulo_der";
         else claveIndy = "pendulo_centro";
     } else if (std::abs(indy->getVelX()) > 5.0f) {
-        claveIndy = ((contadorFrames / 8) % 2 == 0) ? "indy_camina1" : "indy_camina2";
+        bool paso2 = ((contadorFrames / 8) % 2 != 0);
+        if (indy->esEnfurecido()) {
+            claveIndy = paso2 ? "indy_enfurecido2" : "indy_enfurecido1";
+        } else {
+            claveIndy = paso2 ? "indy_camina2" : "indy_camina1";
+        }
     }
     QPixmap pixIndy = obtenerSprite(claveIndy, indy->getAncho() + 24, indy->getAlto() + 16, indyMiraIzq);
     if (!pixIndy.isNull()) {
@@ -607,4 +630,8 @@ void MainWindow::configurarAudio() {
     fxPalanca = new QSoundEffect(this);
     fxPalanca->setSource(QUrl("qrc:/00. sonido_palanca.wav"));
     fxPalanca->setVolume(0.85f);
+}
+
+void MainWindow::on_btnContinuarNivel2_clicked() {
+    iniciarNivel2();
 }

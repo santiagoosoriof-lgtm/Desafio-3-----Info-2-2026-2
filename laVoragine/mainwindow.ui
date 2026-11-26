@@ -23,37 +23,91 @@
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
+      <property name="styleSheet">
+       <string notr="true">#pageTransicion {
+    border-image: url(:/0. Fondo transicion.png) 0 0 0 0 stretch stretch;
+}
+
+QLabel {
+    background: transparent;
+    color: white;
+}</string>
+      </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="PageMenu">
+       <property name="styleSheet">
+        <string notr="true">#PageMenu {
+    border-image: url(:/0. Fondo Menu.png) 0 0 0 0 stretch stretch;
+}
+
+QLabel {
+    background: transparent;
+    color: white;
+}</string>
+       </property>
        <widget class="QLabel" name="label">
         <property name="geometry">
          <rect>
-          <x>310</x>
+          <x>270</x>
           <y>20</y>
-          <width>601</width>
-          <height>101</height>
+          <width>651</width>
+          <height>151</height>
          </rect>
         </property>
         <property name="font">
          <font>
-          <family>Sans Serif Collection</family>
-          <pointsize>15</pointsize>
+          <family>Georgia</family>
+          <pointsize>-1</pointsize>
+          <bold>true</bold>
          </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel {
+    color: #FFF3D1;
+    font-family: &quot;Georgia&quot;, &quot;Trebuchet MS&quot;, serif;
+    font-size: 30px;
+    font-weight: bold;
+    background-color: rgba(20, 14, 8, 175);
+    padding: 16px 24px;
+    border: 2px solid #C8963E;
+    border-radius: 10px;
+}
+</string>
         </property>
         <property name="text">
          <string>Indiana Jones y La Fiebre del Caucho :  EL Oro Blanco del Putumayo</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
         </property>
        </widget>
        <widget class="QPushButton" name="btnNormal">
         <property name="geometry">
          <rect>
-          <x>500</x>
-          <y>210</y>
-          <width>171</width>
-          <height>81</height>
+          <x>470</x>
+          <y>430</y>
+          <width>241</width>
+          <height>51</height>
          </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #8b5a2b;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 12px 28px;
+    border: 2px solid #f5deb3;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #a86f38;
+}</string>
         </property>
         <property name="text">
          <string>Modo Normal</string>
@@ -62,11 +116,25 @@
        <widget class="QPushButton" name="btnDificil">
         <property name="geometry">
          <rect>
-          <x>500</x>
-          <y>310</y>
-          <width>171</width>
-          <height>81</height>
+          <x>470</x>
+          <y>490</y>
+          <width>241</width>
+          <height>51</height>
          </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #8b5a2b;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 12px 28px;
+    border: 2px solid #f5deb3;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #a86f38;
+}</string>
         </property>
         <property name="text">
          <string>Modo Díficil</string>
@@ -552,45 +620,162 @@
        </layout>
       </widget>
       <widget class="QWidget" name="pageTransicion">
-       <widget class="QLabel" name="Fondotransicion">
+       <widget class="QLabel" name="label_2">
         <property name="geometry">
          <rect>
-          <x>430</x>
-          <y>190</y>
-          <width>49</width>
-          <height>16</height>
+          <x>0</x>
+          <y>540</y>
+          <width>1244</width>
+          <height>100</height>
          </rect>
         </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Georgia</family>
+          <pointsize>-1</pointsize>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel {
+    color: #FFF3D1;
+    font-family: &quot;Georgia&quot;, &quot;Trebuchet MS&quot;, serif;
+    font-size: 20px;
+    font-weight: bold;
+    background-color: rgba(20, 14, 8, 175);
+    padding: 16px 24px;
+    border: 2px solid #C8963E;
+    border-radius: 10px;
+}
+</string>
+        </property>
         <property name="text">
-         <string>TextLabel</string>
+         <string>Sobreviviste a los rápidos del Putumayo y completaste el mapa! Preparate para infiltrarte en la chorrera </string>
+        </property>
+        <property name="scaledContents">
+         <bool>false</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btnContinuarNivel2">
+        <property name="geometry">
+         <rect>
+          <x>490</x>
+          <y>640</y>
+          <width>261</width>
+          <height>61</height>
+         </rect>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>500</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::LayoutDirection::LeftToRight</enum>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #8b5a2b;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 12px 28px;
+    border: 2px solid #f5deb3;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #a86f38;
+}</string>
+        </property>
+        <property name="text">
+         <string>Continuar al nivel 2</string>
         </property>
        </widget>
       </widget>
       <widget class="QWidget" name="pageFinal">
+       <property name="styleSheet">
+        <string notr="true">#pageFinal {
+    border-image: url(:/0. Fondo Menu.png) 0 0 0 0 stretch stretch;
+}
+
+QLabel {
+    background: transparent;
+    color: white;
+}</string>
+       </property>
        <widget class="QLabel" name="lblResultadoFinal">
         <property name="geometry">
          <rect>
-          <x>300</x>
-          <y>230</y>
-          <width>431</width>
-          <height>81</height>
+          <x>80</x>
+          <y>60</y>
+          <width>951</width>
+          <height>151</height>
          </rect>
         </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel {
+    color: #FFF3D1;
+    font-family: &quot;Georgia&quot;, &quot;Trebuchet MS&quot;, serif;
+    font-size: 22px;
+    font-weight: bold;
+    background-color: rgba(20, 14, 8, 175);
+    padding: 16px 24px;
+    border: 2px solid #C8963E;
+    border-radius: 10px;
+}
+</string>
+        </property>
         <property name="text">
-         <string>TextLabel</string>
+         <string>Perdiste</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
         </property>
        </widget>
        <widget class="QPushButton" name="btnReintentar">
         <property name="geometry">
          <rect>
-          <x>460</x>
-          <y>330</y>
+          <x>450</x>
+          <y>490</y>
           <width>211</width>
           <height>61</height>
          </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #8b5a2b;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 12px 28px;
+    border: 2px solid #f5deb3;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #a86f38;
+}</string>
         </property>
         <property name="text">
          <string>Reintentar</string>
@@ -599,11 +784,25 @@
        <widget class="QPushButton" name="btnVolverMenu">
         <property name="geometry">
          <rect>
-          <x>460</x>
-          <y>400</y>
+          <x>450</x>
+          <y>560</y>
           <width>211</width>
           <height>61</height>
          </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #8b5a2b;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 12px 28px;
+    border: 2px solid #f5deb3;
+    border-radius: 8px;
+}
+QPushButton:hover {
+    background-color: #a86f38;
+}</string>
         </property>
         <property name="text">
          <string>Menú</string>

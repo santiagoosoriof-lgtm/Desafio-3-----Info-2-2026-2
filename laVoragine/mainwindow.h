@@ -37,6 +37,7 @@ private slots:
     void on_btnDificil_clicked();
     void on_btnReintentar_clicked();
     void on_btnVolverMenu_clicked();
+    void on_btnContinuarNivel2_clicked();
     void actualizarJuego(); // Bucle principal ~60 FPS
 
 private:

@@ -8,7 +8,7 @@ GestorNivel1::GestorNivel1(Dificultad dif, uint8_t metaPergaminos)
     : jugador(nullptr),
     estado(EstadoNivel::EN_CURSO),
     dificultad(dif),
-    tiempoRestante(120.0f),
+    tiempoRestante(60.0f),
     pergaminosRecolectados(0),
     pergaminosObjetivo(metaPergaminos),
     timerSpawnObstaculo(0.0f),
@@ -247,7 +247,7 @@ void GestorNivel1::reiniciar(Dificultad nuevaDif) {
     liberarMemoriaTotal();
     dificultad = nuevaDif;
     estado = EstadoNivel::EN_CURSO;
-    tiempoRestante = 120.0f;
+    tiempoRestante = 60.0f;
     pergaminosRecolectados = 0;
     timerSpawnObstaculo = 0.0f;
     timerSpawnDisparoOrilla = 1.5f;

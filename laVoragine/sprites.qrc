@@ -37,5 +37,9 @@
         <file>00. sonido_palanca.wav</file>
         <file>00. Indy cara.png</file>
         <file>0. Fondo transicion.png</file>
+        <file>0. Balsa de frentepoder.png</file>
+        <file>0. Fondo Menu.png</file>
+        <file>00. Indy camina1poder.png</file>
+        <file>00. Indy camina2poder.png</file>
     </qresource>
 </RCC>

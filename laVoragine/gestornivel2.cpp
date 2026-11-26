@@ -16,7 +16,7 @@ GestorNivel2::GestorNivel2(Dificultad dif)
     timerAtravesarPlataforma(0.0f),
     timerCalderoIzq(1.0f),
     timerCalderoDer(2.2f),
-    tiempoLimitePalancas(30.0f){
+    tiempoLimitePalancas(10.0f){
 
     proyectiles.reserve(20);
     items.reserve(6);
@@ -198,7 +198,7 @@ void GestorNivel2::actualizar(float dt) {
                 palancasActivadas++;
                 // Al activar la primera palanca inicia el límite de 60 segundos
                 if (palancasActivadas == 1) {
-                    tiempoLimitePalancas = 60.0f;
+                    tiempoLimitePalancas = 10.0f;
                 }
                 capataz->aprenderZonaEvasion(jugador->getX());
             }
@@ -215,7 +215,7 @@ void GestorNivel2::actualizar(float dt) {
                 }
             }
             palancasActivadas = 0;
-            tiempoLimitePalancas = 60.0f;
+            tiempoLimitePalancas = 10.0f;
         }
     }
 
@@ -386,7 +386,7 @@ void GestorNivel2::reiniciar(Dificultad nuevaDif) {
     indyCorriendo = false;
     jugadorFueVistoAntes = false;
     vidasRestantes = VIDAS_INICIALES,
-    tiempoLimitePalancas= 60.0f;
+    tiempoLimitePalancas= 10.0f;
 
     configurarDificultad();
 

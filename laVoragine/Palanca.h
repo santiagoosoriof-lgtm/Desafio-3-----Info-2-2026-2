@@ -25,7 +25,6 @@ public:
         if (verificarColision(indy)) {
             activada = true;
             recolectado = true;
-            //permanece en pantalla
             return true;
         }
         return false;
