@@ -20,7 +20,9 @@ private:
     float tiempoEnfurecido;
     float tiempoAtaque;
     float cooldownAtaque;
-    const float GRAVEDAD = 450.0f; // Escala en píxeles/s^2
+    static constexpr float GRAVEDAD = 450.0f;            // Escala en píxeles/s^2
+    static constexpr float LONGITUD_LATIGO_FIJA = 180.0f; // Largo fijo del latigo al columpiarse
+
 
 public:
     IndianaJones(float x, float y, float w, float h);
@@ -49,6 +51,9 @@ public:
     bool getEstaAtacando() const { return estaAtacando; }
     int getDireccionMirada() const { return direccionMirada; }
     int getDanoLatigo() const { return modoEnfurecido ? 50 : 30; }
+    float getPivoteX() const { return pivoteX; }
+    float getPivoteY() const { return pivoteY; }
+
 };
 
 #endif // INDIANAPERSONAJE_H

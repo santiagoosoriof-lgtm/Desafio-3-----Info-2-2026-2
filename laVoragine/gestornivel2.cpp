@@ -9,11 +9,14 @@ GestorNivel2::GestorNivel2(Dificultad dif)
     estado(EstadoNivel::EN_CURSO),
     dificultad(dif),
     palancasActivadas(0),
+    vidasRestantes(VIDAS_INICIALES),
     indyEnSuelo(false),
     indyCorriendo(false),
     jugadorFueVistoAntes(false),
+    timerAtravesarPlataforma(0.0f),
     timerCalderoIzq(1.0f),
-    timerCalderoDer(2.2f) {
+    timerCalderoDer(2.2f),
+    tiempoLimitePalancas(30.0f){
 
     proyectiles.reserve(20);
     items.reserve(6);
@@ -25,7 +28,7 @@ GestorNivel2::GestorNivel2(Dificultad dif)
     jugador = new IndianaJones(80.0f, 580.0f, 52.0f, 76.0f);
 
     // El Capataz Mayor patrulla toda la pasarela derecha (1105 a 1520)
-    capataz = new CapatazMayor(1280.0f, 580.0f, 56.0f, 80.0f, 1065.0f, 1520.0f);
+    capataz = new CapatazMayor(1280.0f, 580.0f, 56.0f, 80.0f, 20.0f, 1510.0f);
 }
 
 GestorNivel2::~GestorNivel2() {
@@ -35,18 +38,21 @@ GestorNivel2::~GestorNivel2() {
 void GestorNivel2::inicializarEscenario() {
     //coordenadas pasarelas
     plataformas = {{
-        {   0.0f, 660.0f, 345.0f, 32.0f },
-        { 515.0f, 660.0f, 260.0f, 32.0f },
-        { 515.0f, 810.0f, 260.0f, 32.0f },
-        { 1100.0f, 660.0f, 436.0f, 32.0f }
+        {   0.0f, 660.0f, 300.0f, 32.0f }, //plataforma media izq
+        { 515.0f, 660.0f, 260.0f, 32.0f }, //plataforma central media
+        { 515.0f, 810.0f, 260.0f, 32.0f }, //plataforma central baja
+        { 1100.0f, 660.0f, 436.0f, 32.0f}, //plataforma media derecha
+        {    0.0f, 475.0f, 125.0f, 28.0f}, //plataforma sup izq
+        {  300.0f, 550.0f, 800.0f, 28.0f}, //plataforma central sup
+        { 1365.0f, 475.0f, 171.0f, 28.0f}  //plataforma sup der
     }};
 
     // coordenadas ganchos
     puntosAnclaje = {{
         {  162.0f, 250.0f, 450.0f }, // Argolla izquierda
-        {  366.0f, 250.0f, 480.0f }, // Argolla centro-izquierda (cruza primer abismo)
-        { 1068.0f, 270.0f, 580.0f }, // Barra colgante derecha (cruza segundo abismo)
-        { 1360.0f, 270.0f, 450.0f }  // Trapecio derecho (evadir al Capataz)
+        {  366.0f, 250.0f, 450.0f }, // Argolla centro-izquierda (cruza primer abismo)
+        { 1105.0f, 270.0f, 450.0f }, // Barra colgante derecha (cruza segundo abismo)
+        { 1360.0f, 250.0f, 450.0f }  // Trapecio derecho (evadir al Capataz)
     }};
 
     // coordenadas 3 palancas
@@ -81,17 +87,39 @@ void GestorNivel2::actualizar(float dt) {
     if (jugador->getX() + jugador->getAncho() > ANCHO_MUNDO) {
         jugador->setPosicion(ANCHO_MUNDO - jugador->getAncho(), jugador->getY());
     }
+    // Limite superior de la escena
+    constexpr float LIMITE_SUPERIOR_Y = -80.0f;
+    if (jugador->getY() < LIMITE_SUPERIOR_Y) {
+        jugador->setPosicion(jugador->getX(), LIMITE_SUPERIOR_Y);
+        if (jugador->getVelY() < 0.0f) {
+            jugador->setVelocidad(jugador->getVelX(), 0.0f); // Detiene el ascenso y actúa la gravedad
+        }
+    }
 
     // Colision con plataformas
     indyEnSuelo = false;
     if (!jugador->estaUsandoPendulo()) {
-        resolverColisionesPlataformas(yAnterior);
+        resolverColisionesPlataformas(jugador, yAnterior);
+    }
+    // Caida de plataforma bajo comando
+    if (timerAtravesarPlataforma > 0.0f) {
+        timerAtravesarPlataforma -= dt;
+    }
+
+    indyEnSuelo = false;
+    if (!jugador->estaUsandoPendulo() && timerAtravesarPlataforma <= 0.0f) {
+        resolverColisionesPlataformas(jugador, yAnterior);
     }
 
     // Verificar caida al abismo / calderos
     if (jugador->getY() > Y_ABISMO_MORTAL) {
-        capataz->aprenderZonaEvasion(jugador->getX());
-        estado = EstadoNivel::DERROTA_SALUD;
+        vidasRestantes--;
+        if (vidasRestantes > 0) {
+            respawnJugador();
+        } else {
+            capataz->aprenderZonaEvasion(jugador->getX());
+            estado = EstadoNivel::DERROTA_SALUD;
+        }
         return;
     }
 
@@ -109,10 +137,21 @@ void GestorNivel2::actualizar(float dt) {
     }
 
     // Agente Autonomo (Capataz Mayor: Percepción -> Razonamiento -> Acción)
+
+    float yCapAnterior = capataz->getY();
     bool indyHaciendoRuido = (indyCorriendo && indyEnSuelo);
+
     Proyectil* balaCapataz = capataz->actualizarIA(dt, jugador, indyHaciendoRuido);
     if (balaCapataz != nullptr) {
         proyectiles.push_back(balaCapataz);
+    }
+    // capataz va a las plataformas
+    bool capSuelo = resolverColisionesPlataformas(capataz, yCapAnterior);
+    capataz->setEnSuelo(capSuelo);
+    // si cae reaparece
+    if (capataz->getY() > Y_ABISMO_MORTAL) {
+        capataz->setPosicion(720.0f, 400.0f);
+        capataz->setVelocidad(0.0f, 0.0f);
     }
 
     // Aprendizaje: Si el Capataz estaba persiguiendo/atacando y pierde de vista a Indy, memoriza la zona
@@ -157,9 +196,26 @@ void GestorNivel2::actualizar(float dt) {
         if (item->intentarRecoger(jugador)) {
             if (dynamic_cast<Palanca*>(item) != nullptr) {
                 palancasActivadas++;
-                // El Capataz aprende la ubicación donde Indy opero el mecanismo
+                // Al activar la primera palanca inicia el límite de 60 segundos
+                if (palancasActivadas == 1) {
+                    tiempoLimitePalancas = 60.0f;
+                }
                 capataz->aprenderZonaEvasion(jugador->getX());
             }
+        }
+    }
+
+    // Temporizador de 1 minuto: si no se activan las 3 a tiempo, todas vuelven a la izquierda
+    if (palancasActivadas > 0 && palancasActivadas < TOTAL_PALANCAS) {
+        tiempoLimitePalancas -= dt;
+        if (tiempoLimitePalancas <= 0.0f) {
+            for (ObjetoRecolectable* item : items) {
+                if (Palanca* pal = dynamic_cast<Palanca*>(item)) {
+                    pal->volverAIzquierda();
+                }
+            }
+            palancasActivadas = 0;
+            tiempoLimitePalancas = 60.0f;
         }
     }
 
@@ -171,33 +227,37 @@ void GestorNivel2::actualizar(float dt) {
 
     // Verificar salud de Indy
     if (!jugador->estaActiva() || jugador->getSalud() <= 0) {
-        capataz->aprenderZonaEvasion(jugador->getX());
-        estado = EstadoNivel::DERROTA_SALUD;
+        vidasRestantes--;
+        if (vidasRestantes > 0) {
+            respawnJugador();
+        } else {
+            capataz->aprenderZonaEvasion(jugador->getX());
+            estado = EstadoNivel::DERROTA_SALUD;
+        }
         return;
     }
 
     limpiarInactivos();
 }
 
-void GestorNivel2::resolverColisionesPlataformas(float yAnterior) {
-    // Solo aterriza si viene cayendo (velY >= 0)
-    if (jugador->getVelY() < 0.0f) return;
+bool GestorNivel2::resolverColisionesPlataformas(Personaje* personaje, float yAnterior) {
+    if (!personaje || personaje->getVelY() < 0.0f) return false;
 
-    float piesAnteriores = yAnterior + jugador->getAlto();
-    float piesActuales = jugador->getY() + jugador->getAlto();
-    float centroX = jugador->getX() + jugador->getAncho() * 0.5f;
+    float piesAnteriores = yAnterior + personaje->getAlto();
+    float piesActuales = personaje->getY() + personaje->getAlto();
+    float centroX = personaje->getX() + personaje->getAncho() * 0.5f;
 
     for (const Plataforma& plat : plataformas) {
         bool dentroEnX = (centroX >= plat.x && centroX <= plat.x + plat.ancho);
-        bool cruzoSuperficie = (piesAnteriores <= plat.y + 10.0f && piesActuales >= plat.y);
+        bool cruzoSuperficie = (piesAnteriores <= plat.y + 12.0f && piesActuales >= plat.y);
 
         if (dentroEnX && cruzoSuperficie) {
-            jugador->setPosicion(jugador->getX(), plat.y - jugador->getAlto());
-            jugador->setVelocidad(jugador->getVelX(), 0.0f);
-            indyEnSuelo = true;
-            break;
+            personaje->setPosicion(personaje->getX(), plat.y - personaje->getAlto());
+            personaje->setVelocidad(personaje->getVelX(), 0.0f);
+            return true;
         }
     }
+    return false;
 }
 
 void GestorNivel2::lanzarGotaLatex(float origenX, float origenY) {
@@ -205,7 +265,7 @@ void GestorNivel2::lanzarGotaLatex(float origenX, float origenY) {
     float anguloGrados = 75.0f + static_cast<float>(std::rand() % 31);
     proyectiles.push_back(new Proyectil(origenX, origenY, 16.0f, 16.0f,
                                         velInicialLatex, anguloGrados, 450.0f, 15,
-                                        ANCHO_MUNDO, ALTO_MUNDO));
+                                        ANCHO_MUNDO, ALTO_MUNDO, true));
 }
 
 // --- CONTROLES DE ENTRADA DEL JUGADOR ---
@@ -238,8 +298,8 @@ void GestorNivel2::saltarJugador() {
     if (jugador->estaUsandoPendulo()) {
         jugador->soltarLatigo();
         indyEnSuelo = false;
-    } else if (indyEnSuelo) {
-        jugador->saltar(510.0f);
+    } else if (indyEnSuelo || std::abs(jugador->getVelY()) < 1.0f) {
+        jugador->saltar(485.0f);
         indyEnSuelo = false;
     }
 }
@@ -247,15 +307,27 @@ void GestorNivel2::saltarJugador() {
 void GestorNivel2::intentarUsarLatigo() {
     if (estado != EstadoNivel::EN_CURSO || !jugador || jugador->estaUsandoPendulo()) return;
 
-    // Busca el punto de anclaje mas cercano dentro de su radio de alcance
+    const PuntoAnclaje *mejorPunto = nullptr;
+    float menorDistancia = 99999.0f;
+
     for (const PuntoAnclaje& punto : puntosAnclaje) {
-        if (jugador->intentarEnganchar(punto)) {
-            indyEnSuelo = false;
-            indyCorriendo = false;
-            break;
+        float dx = jugador->getX() - punto.x;
+        float dy = jugador->getY() - punto.y;
+        float dist = std::sqrt(dx * dx + dy * dy);
+
+        // Solo considera ganchos que estén por encima de Indy (dy > 0) y dentro del alcance
+        if (dy > 0.0f && dist <= punto.radioAlcance && dist < menorDistancia) {
+            menorDistancia = dist;
+            mejorPunto = &punto;
         }
     }
+
+    if (mejorPunto && jugador->intentarEnganchar(*mejorPunto)) {
+        indyEnSuelo = false;
+        indyCorriendo = false;
+    }
 }
+
 
 void GestorNivel2::impulsarLatigo(float dirX, float dt) {
     if (estado == EstadoNivel::EN_CURSO && jugador && jugador->estaUsandoPendulo()) {
@@ -313,6 +385,8 @@ void GestorNivel2::reiniciar(Dificultad nuevaDif) {
     indyEnSuelo = false;
     indyCorriendo = false;
     jugadorFueVistoAntes = false;
+    vidasRestantes = VIDAS_INICIALES,
+    tiempoLimitePalancas= 60.0f;
 
     configurarDificultad();
 
@@ -335,6 +409,31 @@ void GestorNivel2::reiniciar(Dificultad nuevaDif) {
     if (capataz) {
         capataz->reiniciarParaNuevoIntento(1280.0f, 580.0f);
     } else {
-        capataz = new CapatazMayor(1280.0f, 580.0f, 56.0f, 80.0f, 1065.0f, 1520.0f);
+        capataz = new CapatazMayor(1280.0f, 580.0f, 56.0f, 80.0f, 20.0f, 1510.0f);
     }
+}
+void GestorNivel2::bajarPlataforma() {
+    if (estado == EstadoNivel::EN_CURSO && jugador && !jugador->estaUsandoPendulo()) {
+        // Solo permite bajar si está por encima de la plataforma más baja (y = 810)
+        float piesY = jugador->getY() + jugador->getAlto();
+        if (piesY < 790.0f) {
+            timerAtravesarPlataforma = 0.45f; // Tiempo suficiente para atravesar la terraza (495) y caer a 660
+            indyEnSuelo = false;
+            jugador->setPosicion(jugador->getX(), jugador->getY() + 25.0f);
+            jugador->setVelocidad(jugador->getVelX(), 180.0f);
+        }
+    }
+}
+
+void GestorNivel2::respawnJugador() {
+    // El Capataz aprende el lugar donde Indy fallo antes de revivirlo
+    if (capataz && jugador) {
+        capataz->aprenderZonaEvasion(jugador->getX());
+    }
+
+    delete jugador;
+    jugador = new IndianaJones(80.0f, 580.0f, 52.0f, 76.0f);
+    indyEnSuelo = false;
+    indyCorriendo = false;
+    timerAtravesarPlataforma = 0.0f;
 }

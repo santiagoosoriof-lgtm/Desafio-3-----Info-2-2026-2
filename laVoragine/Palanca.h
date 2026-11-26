@@ -12,6 +12,12 @@ public:
         ObjetoRecolectable(x, y, w, h), activada(false) {}
 
     void actualizarFisica(float dt) override { (void)dt; }
+
+    void volverAIzquierda() {
+        activada = false;
+        recolectado = false;
+    }
+
     bool intentarRecoger(IndianaJones* indy) override {
         // Si ya activada, no vuelve a cambiar
         if (!activa || activada || !indy) return false;

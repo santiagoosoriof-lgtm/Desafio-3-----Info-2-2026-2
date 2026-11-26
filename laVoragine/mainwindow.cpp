@@ -284,17 +284,22 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
     if (nivelActivo == 2 && nivel2) {
         if (event->key() == Qt::Key_Space || event->key() == Qt::Key_W || event->key() == Qt::Key_Up) {
             nivel2->saltarJugador();
-        }
-        if (event->key() == Qt::Key_E) {
+            event ->accept();
+        } else if (event->key() == Qt::Key_S || event->key() == Qt::Key_Down) {
+            nivel2->bajarPlataforma();
+            event ->accept();
+        } else if (event->key() == Qt::Key_E) {
             nivel2->intentarUsarLatigo();
             if (nivel2->getJugador()->estaUsandoPendulo()) {
                 fxLatigo->play();
             }
-        }
-        if (event->key() == Qt::Key_J || event->key() == Qt::Key_F) {
+            event ->accept();
+        } else if (event->key() == Qt::Key_J || event->key() == Qt::Key_F) {
             nivel2->atacarJugador();
             fxLatigo->play();
+            event ->accept();
         }
+
     }
 }
 
@@ -432,15 +437,25 @@ void MainWindow::dibujarNivel2() {
     const CapatazMayor *capataz = nivel2->getCapataz();
     // 1. Actualizar parte superior
     ui->barraSaludN2->setValue(indy->getSalud());
-    ui->barraSaludCapataz->setValue(capataz->estaActiva() ? capataz->getSalud() : 0);
-    ui->lblPalancasN2->setText(QString("Palancas: %1 / %2")
-                                   .arg(nivel2->getPalancasActivadas())
-                                   .arg(nivel2->getTotalPalancas()));
-    limpiarItemsFrame(escenaN2, itemsFrameN2);
+    uint8_t vidas = nivel2->getVidasRestantes();
+    ui->lblVida1->setVisible(vidas >= 1);
+    ui->lblVida2->setVisible(vidas >= 2);
+    ui->lblVida3->setVisible(vidas >= 3);
+    uint8_t palancasActuales = nivel2->getPalancasActivadas();
+    if (palancasActuales > 0 && palancasActuales < nivel2->getTotalPalancas()) {
+        int segPalancas = static_cast<int>(std::ceil(nivel2->getTiempoLimitePalancas()));
+        ui->lblPalancasN2->setText(QString("%1 / %2  (%3s)")
+                                       .arg(palancasActuales)
+                                       .arg(nivel2->getTotalPalancas())
+                                       .arg(segPalancas));
+    } else {
+        ui->lblPalancasN2->setText(QString("%1 / %2")
+                                       .arg(palancasActuales)
+                                       .arg(nivel2->getTotalPalancas()));
+    }
 
     // 1.1 Efectos de sonido disparo, golpe, corazon y palanca
     int saludActual = indy->getSalud();
-    uint8_t palancasActuales = nivel2->getPalancasActivadas();
     size_t proyectilesActuales = nivel2->getProyectiles().size();
 
     if (proyectilesActuales > proyectilesAnterioresN2 &&
@@ -456,13 +471,16 @@ void MainWindow::dibujarNivel2() {
         fxItem->play();
     }
 
-    if (palancasActuales > palancasAnteriores) {
+    if (palancasActuales != palancasAnteriores) {
         fxPalanca->play();
     }
 
     saludAnterior = saludActual;
     palancasAnteriores = palancasActuales;
     proyectilesAnterioresN2 = proyectilesActuales;
+
+    limpiarItemsFrame(escenaN2, itemsFrameN2);
+
 
     // 2. Puerta de escape iluminada a la derecha cuando las 3 palancas estan hacia la derecha
     if (nivel2->estaPuertaAbierta()) {
@@ -493,9 +511,15 @@ void MainWindow::dibujarNivel2() {
     // 4. Proyectiles (balas del Capataz + gotas de latex hirviendo)
     for (const Proyectil *proj : nivel2->getProyectiles()) {
         if (!proj->estaActiva()) continue;
-        auto *gota = escenaN2->addEllipse(proj->getX(), proj->getY(), proj->getAncho(), proj->getAlto(),
-                                          QPen(QColor(255, 220, 100)), QBrush(QColor(240, 235, 210)));
-        itemsFrameN2.append(gota);
+
+        QPen borde = proj->esGotaLatex() ? QPen(QColor(210, 210, 210), 2) : QPen(Qt::yellow, 2);
+        QBrush relleno = proj->esGotaLatex() ? QBrush(Qt::white) : QBrush(Qt::red);
+
+        auto *esfera = escenaN2->addEllipse(proj->getX(), proj->getY(), proj->getAncho(), proj->getAlto(),
+                                            borde, relleno);
+        esfera->setZValue(6);
+
+        itemsFrameN2.append(esfera);
         if (indy->puedeVerTrayectorias()) {
             dibujarTrayectoriaPredictiva(escenaN2, itemsFrameN2, proj);
         }
@@ -504,7 +528,9 @@ void MainWindow::dibujarNivel2() {
     if (capataz && capataz->estaActiva()) {
         bool capMiraIzq = (capataz->getDireccion() < 0);
         QString claveCap = "cap_parado";
-        if (capataz->getEstado() == EstadoCapataz::ATAQUE_A_DISTANCIA) {
+        if (capataz->getEstado() == EstadoCapataz::ATURDIDO) {
+            claveCap = "cap_atacado";
+        } else if (capataz->getEstado() == EstadoCapataz::ATAQUE_A_DISTANCIA) {
             claveCap = ((contadorFrames / 15) % 2 == 0) ? "cap_prepara" : "cap_dispara";
         } else if (capataz->getEstado() == EstadoCapataz::ATAQUE_CERCANO) {
             claveCap = "cap_dispara";
@@ -523,21 +549,12 @@ void MainWindow::dibujarNivel2() {
     if (indy->estaUsandoPendulo()) {
         float indyCentroX = indy->getX() + indy->getAncho() * 0.5f;
         float indyCentroY = indy->getY() + 10.0f;
-        const PuntoAnclaje *anclaCercana = nullptr;
-        float minDist = 99999.0f;
-        for (const PuntoAnclaje &p : nivel2->getPuntosAnclaje()) {
-            float d = std::hypot(indyCentroX - p.x, indyCentroY - p.y);
-            if (d < minDist) {
-                minDist = d;
-                anclaCercana = &p;
-            }
-        }
-        if (anclaCercana) {
-            auto *cuerda = escenaN2->addLine(anclaCercana->x, anclaCercana->y, indyCentroX, indyCentroY,
-                                             QPen(QColor(135, 85, 40), 4));
-            itemsFrameN2.append(cuerda);
-        }
+        auto *cuerda = escenaN2->addLine(indy->getPivoteX(), indy->getPivoteY(),
+                                         indyCentroX, indyCentroY,
+                                         QPen(QColor(135, 85, 40), 4));
+        itemsFrameN2.append(cuerda);
     }
+
     // 7. Indiana Jones animado (parado, camina1/2, péndulo izq/centro/der) + Latigazo
     bool indyMiraIzq = (indy->getDireccionMirada() < 0);
     QString claveIndy = "indy_parado";

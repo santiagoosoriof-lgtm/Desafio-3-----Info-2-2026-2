@@ -31,7 +31,7 @@ private:
     CapatazMayor* capataz;
 
     // Geometría estática en Stack (0 bytes en Heap, acceso O(1))
-    std::array<Plataforma, 4> plataformas;
+    std::array<Plataforma, 7> plataformas;
     std::array<PuntoAnclaje, 4> puntosAnclaje;
 
     // Entidades dinámicas
@@ -42,27 +42,31 @@ private:
     EstadoNivel estado;
     Dificultad dificultad;
     uint8_t palancasActivadas;
+    uint8_t vidasRestantes;
     static constexpr uint8_t TOTAL_PALANCAS = 3;
+    static constexpr uint8_t VIDAS_INICIALES = 3;
 
     // Control de estado del jugador en plataforma
     bool indyEnSuelo;
     bool indyCorriendo;
     bool jugadorFueVistoAntes;
 
-    // Temporizadores de calderos de látex
+    // Temporizadores de caldero y plataforma
+    float timerAtravesarPlataforma;
     float timerCalderoIzq;
     float timerCalderoDer;
     float intervaloCalderos;
     float velInicialLatex;
+    float tiempoLimitePalancas;
 
-    // Métodos internos
+    // Metodos de la clase
     void inicializarEscenario();
     void configurarDificultad();
-    void resolverColisionesPlataformas(float yAnterior);
+    bool resolverColisionesPlataformas(Personaje* personaje, float yAnterior);
     void lanzarGotaLatex(float origenX, float origenY);
     void limpiarInactivos();
     void liberarMemoriaTotal();
-
+    void respawnJugador();
 public:
     GestorNivel2(Dificultad dif = Dificultad::NORMAL);
     ~GestorNivel2();
@@ -75,6 +79,7 @@ public:
     // Controles de entrada desde Qt
     void moverJugadorHorizontal(float dirX);
     void saltarJugador();
+    void bajarPlataforma();
     void intentarUsarLatigo();
     void impulsarLatigo(float dirX, float dt);
     void soltarLatigo();
@@ -86,7 +91,7 @@ public:
     // Getters de solo lectura para renderizado en Qt
     const IndianaJones* getJugador() const { return jugador; }
     const CapatazMayor* getCapataz() const { return capataz; }
-    const std::array<Plataforma, 4>& getPlataformas() const { return plataformas; }
+    const std::array<Plataforma, 7>& getPlataformas() const { return plataformas; }
     const std::array<PuntoAnclaje, 4>& getPuntosAnclaje() const { return puntosAnclaje; }
     const std::vector<Proyectil*>& getProyectiles() const { return proyectiles; }
     const std::vector<ObjetoRecolectable*>& getItems() const { return items; }
@@ -95,6 +100,8 @@ public:
     EstadoNivel getEstado() const { return estado; }
     uint8_t getPalancasActivadas() const { return palancasActivadas; }
     uint8_t getTotalPalancas() const { return TOTAL_PALANCAS; }
+    uint8_t getVidasRestantes() const { return vidasRestantes; }
+    float getTiempoLimitePalancas() const { return tiempoLimitePalancas; }
 };
 
 #endif // GESTORNIVEL2_H

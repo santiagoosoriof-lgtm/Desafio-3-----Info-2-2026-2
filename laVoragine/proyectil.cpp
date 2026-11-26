@@ -2,10 +2,11 @@
 #include <cmath>
 
 Proyectil::Proyectil(float x, float y, float w, float h, float velInicial, float anguloGrados,
-                     float grav, int dmg, float maxW, float maxH)
+                     float grav, int dmg, float maxW, float maxH, bool latex)
     : EntidadJuego(x, y, w, h),
     x0(x), y0(y), v0(velInicial), gravedad(grav),
-    tiempoVuelo(0.0f), dano(dmg), limiteX(maxW), limiteY(maxH) {
+    tiempoVuelo(0.0f), dano(dmg), limiteX(maxW), limiteY(maxH),
+    esLatex(latex) {
     const float PI = 3.14159265f;
     anguloRad = anguloGrados * (PI / 180.0f);
 }

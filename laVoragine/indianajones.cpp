@@ -11,12 +11,12 @@ IndianaJones::IndianaJones(float x, float y, float w, float h)
     direccionMirada(1),
     pivoteX(0.0f),
     pivoteY(0.0f),
-    longitudLatigo(100.0f),
+    longitudLatigo(LONGITUD_LATIGO_FIJA),
     anguloPendulo(0.0f),
     velAngular(0.0f),
     tiempoEnfurecido(0.0f),
     tiempoAtaque(0.0f),
-    cooldownAtaque(0.0f) {}
+    cooldownAtaque(0.0f){}
 
 void IndianaJones::actualizarFisica(float dt) {
 
@@ -40,20 +40,30 @@ void IndianaJones::actualizarFisica(float dt) {
 
     // Pendulo simple si esta usando el latigo
     if (estaColgando) {
-        // Ecuacion: aceleracion angular alpha = -(g / L) * sin(theta)
+        const float LIMITE_ANGULO = 1.52f; // ~87 grados a cada lado (arco total ~175° bajo la argolla)
+
         float aceleracionAngular = -(GRAVEDAD / longitudLatigo) * std::sin(anguloPendulo);
         velAngular += aceleracionAngular * dt;
         anguloPendulo += velAngular * dt;
 
-        //coordenadas cartesianas
+        // Tope físico para que nunca suba por encima de la argolla ni salga de pantalla
+        if (anguloPendulo > LIMITE_ANGULO) {
+            anguloPendulo = LIMITE_ANGULO;
+            if (velAngular > 0.0f) velAngular = 0.0f;
+        } else if (anguloPendulo < -LIMITE_ANGULO) {
+            anguloPendulo = -LIMITE_ANGULO;
+            if (velAngular < 0.0f) velAngular = 0.0f;
+        }
+
+        // Coordenadas cartesianas respecto al pivote
         posX = pivoteX + longitudLatigo * std::sin(anguloPendulo);
         posY = pivoteY + longitudLatigo * std::cos(anguloPendulo);
     } else {
-        // Movimiento normal y gravedad (en modo enfurecido pesa mas al saltar)
-        float factorGravedad = modoEnfurecido ? 1.5f : 1.0f;
+        // Movimiento horizontal y gravedad normal en plataformas
+        float factorGravedad = modoEnfurecido ? 1.25f : 1.0f;
         velY += (GRAVEDAD * factorGravedad) * dt;
 
-        float multiplicadorVel = modoEnfurecido ? 1.5f : 1.0f; // +50% velocidad
+        float multiplicadorVel = modoEnfurecido ? 1.5f : 1.0f;
         posX += (velX * multiplicadorVel) * dt;
         posY += velY * dt;
     }
@@ -91,9 +101,9 @@ bool IndianaJones::intentarEnganchar(const PuntoAnclaje& punto) {
     float dy = posY - punto.y;
     float distancia = std::sqrt(dx * dx + dy * dy);
 
-    if (distancia <= punto.radioAlcance && distancia > 5.0f && dy > 0.0f) {
+    if (distancia <= punto.radioAlcance && distancia > 10.0f && dy > 10.0f) {
         float anguloInicial = std::atan2(dx, dy);
-        engancharLatigo(punto.x, punto.y, distancia, anguloInicial);
+        engancharLatigo(punto.x, punto.y, LONGITUD_LATIGO_FIJA, anguloInicial);
         return true;
     }
     return false;
@@ -114,6 +124,8 @@ void IndianaJones::impulsarPendulo(float direccion, float fuerzaImpulso, float d
     // Permite al jugador darse impulso hacia izquierda (-1) o derecha (1) mientras cuelga
     if (estaColgando) {
         velAngular += (direccion * fuerzaImpulso / longitudLatigo) * dt;
+        if (velAngular > 3.0f) velAngular = 3.0f;  //limita el balanceo
+        else if (velAngular < -3.0f) velAngular = -3.0f;
     }
 }
 
@@ -124,13 +136,13 @@ void IndianaJones::soltarLatigo() {
     float velTangencial = velAngular * longitudLatigo;
     velX = velTangencial * std::cos(anguloPendulo);
     velY = -velTangencial * std::sin(anguloPendulo);
-    longitudLatigo = 100.0f;
+    longitudLatigo = LONGITUD_LATIGO_FIJA;
 }
 
 void IndianaJones::saltar(float fuerzaSalto) {
     if (!estaColgando) {
         // En modo enfurecido saltar es mas dificil (-25% fuerza)
-        float factorSalto = modoEnfurecido ? 0.75f : 1.0f;
+        float factorSalto = modoEnfurecido ? 0.92f : 1.0f;
         velY = -fuerzaSalto * factorSalto;
     }
 }

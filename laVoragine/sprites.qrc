@@ -35,5 +35,7 @@
         <file>00. sonido_item.wav</file>
         <file>00. sonido_latigo.wav</file>
         <file>00. sonido_palanca.wav</file>
+        <file>00. Indy cara.png</file>
+        <file>0. Fondo transicion.png</file>
     </qresource>
 </RCC>

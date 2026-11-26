@@ -62,6 +62,12 @@ private:
     QList<QGraphicsItem*> itemsFrameN1;
     QList<QGraphicsItem*> itemsFrameN2;
 
+    // Capas logicas
+    GestorNivel1 *nivel1;
+    GestorNivel2 *nivel2;
+    Dificultad dificultadActual;
+    int nivelActivo; // 0 = Menú/Final, 1 = Nivel 1, 2 = Nivel 2
+
     // Sistema de Audio archivos independientes ---
     QSoundEffect *musicaFondo;
     QSoundEffect *fxDisparo;
@@ -75,12 +81,6 @@ private:
     uint8_t pergaminosAnteriores;
     uint8_t palancasAnteriores;
     size_t proyectilesAnterioresN2;
-
-    // Capas logicas
-    GestorNivel1 *nivel1;
-    GestorNivel2 *nivel2;
-    Dificultad dificultadActual;
-    int nivelActivo; // 0 = Menú/Final, 1 = Nivel 1, 2 = Nivel 2
 
     QSet<int> teclasPresionadas;
 

@@ -8,7 +8,7 @@ CapatazMayor::CapatazMayor(float x, float y, float w, float h, float limIzq, flo
     limitePatrullaIzq(limIzq),
     limitePatrullaDer(limDer),
     direccionPatrulla(1),
-    radioVisionBase(300.0f),
+    radioVisionBase(550.0f),
     radioVisionActual(300.0f),
     radioAuditivo(450.0f),
     rangoAtaqueCercano(65.0f),
@@ -20,6 +20,8 @@ CapatazMayor::CapatazMayor(float x, float y, float w, float h, float limIzq, flo
     cooldownDisparo(0.0f),
     tiempoEntreDisparos(1.8f),
     cooldownGolpe(0.0f),
+    cooldownSalto(0.0f),
+    tiempoAturdido(0.0f),
     totalZonasAprendidas(0),
     indiceEscritura(0),
     enZonaSospecha(false) {
@@ -28,6 +30,7 @@ CapatazMayor::CapatazMayor(float x, float y, float w, float h, float limIzq, flo
 
 void CapatazMayor::actualizarFisica(float dt) {
     if (!activa) return;
+    velY += 450.0f * dt; // Gravedad
     posX += velX * dt;
     posY += velY * dt;
 }
@@ -37,6 +40,17 @@ Proyectil* CapatazMayor::actualizarIA(float dt, IndianaJones* indy, bool indyHac
 
     if (cooldownDisparo > 0.0f) cooldownDisparo -= dt;
     if (cooldownGolpe > 0.0f) cooldownGolpe -= dt;
+    if (cooldownSalto > 0.0f) cooldownSalto -= dt;
+
+    if (estadoActual == EstadoCapataz::ATURDIDO) {
+        tiempoAturdido -= dt;
+        if (tiempoAturdido <= 0.0f) {
+            tiempoAturdido = 0.0f;
+            salud = saludMaxima; // Se recupera con salud completa y lo aprendido en memoria
+            estadoActual = EstadoCapataz::PATRULLA;
+        }
+        return nullptr;
+    }
 
     // Ejecucion de las cualidades del agente
     percibir(indy, indyHaciendoRuido);
@@ -101,6 +115,11 @@ Proyectil* CapatazMayor::actuar(float dt, IndianaJones* indy) {
     float centroCapatazX = posX + ancho * 0.5f;
 
     switch (estadoActual) {
+    case EstadoCapataz::ATURDIDO: {
+        velX = 0.0f;
+        return nullptr;
+    }
+
     case EstadoCapataz::PATRULLA: {
         // En zona sospechosa camina más lento (70%) vigilando con más detalle
         float factorVel = enZonaSospecha ? 0.7f : 1.0f;
@@ -118,12 +137,24 @@ Proyectil* CapatazMayor::actuar(float dt, IndianaJones* indy) {
 
     case EstadoCapataz::PERSECUCION: {
         direccionPatrulla = (objetivoX >= centroCapatazX) ? 1 : -1;
-        // Duplica su rapidez base para interceptar a Indy
-        velX = direccionPatrulla * (velocidadBase * 1.8f);
+        velX = direccionPatrulla * (velocidadBase * 1.85f);
 
-        // Respeta limites de su plataforma para no caer al vacío
-        if (posX < limitePatrullaIzq) { posX = limitePatrullaIzq; velX = 0.0f; }
-        if (posX + ancho > limitePatrullaDer) { posX = limitePatrullaDer - ancho; velX = 0.0f; }
+        // Limitar solo a los bordes exteriores de la pantalla (0 a 1536)
+        if (posX < 0.0f) { posX = 0.0f; velX = 0.0f; }
+        if (posX + ancho > 1536.0f) { posX = 1536.0f - ancho; velX = 0.0f; }
+
+        // Salta automáticamente si Indy está en una plataforma más alta o si va a cruzar un abismo
+        bool indyMasArriba = (objetivoY < posY - 40.0f);
+        bool bordeAbismo = (posX < 340.0f && direccionPatrulla == 1) ||
+                           (posX > 490.0f && posX < 525.0f && direccionPatrulla == -1) ||
+                           (posX > 720.0f && posX < 770.0f && direccionPatrulla == 1) ||
+                           (posX > 1055.0f && posX < 1090.0f && direccionPatrulla == -1);
+
+        if (enSuelo && cooldownSalto <= 0.0f && (indyMasArriba || bordeAbismo)) {
+            velY = -495.0f; // Impulso de salto para cruzar abismos o subir plataformas
+            enSuelo = false;
+            cooldownSalto = 0.85f;
+        }
         return nullptr;
     }
 
@@ -162,7 +193,7 @@ Proyectil* CapatazMayor::actuar(float dt, IndianaJones* indy) {
             const float PI = 3.14159265f;
             float anguloGrados = std::atan2(vy, vx) * (180.0f / PI);
 
-            return new Proyectil(origenX, origenY, 14.0f, 14.0f, v0, anguloGrados, g, 15);
+            return new Proyectil(origenX, origenY, 18.0f, 18.0f, v0, anguloGrados, g, 15, 1536.0f, 1024.0f);
         }
         return nullptr;
     }
@@ -208,4 +239,13 @@ void CapatazMayor::reiniciarParaNuevoIntento(float xInicial, float yInicial) {
     estadoActual = EstadoCapataz::PATRULLA;
     cooldownDisparo = 0.0f;
     cooldownGolpe = 0.0f;
+}
+
+void CapatazMayor::recibirDano(int cantidad) {
+    (void) cantidad;
+    if (estadoActual == EstadoCapataz::ATURDIDO) return; // Inmune mientras está noqueado
+
+    velX = 0.0f;
+    estadoActual = EstadoCapataz::ATURDIDO;
+    tiempoAturdido = 2.0f; // Queda sin reaccionar durante 5 segundos
 }

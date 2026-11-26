@@ -12,7 +12,8 @@ enum class EstadoCapataz : uint8_t {
     PATRULLA,
     PERSECUCION,
     ATAQUE_CERCANO,
-    ATAQUE_A_DISTANCIA
+    ATAQUE_A_DISTANCIA,
+    ATURDIDO
 };
 
 class CapatazMayor : public Personaje {
@@ -32,6 +33,7 @@ private:
     // Datos percibidos
     bool jugadorDetectado;
     bool jugadorColgando;
+    bool enSuelo;
     float distanciaJugador;
     float objetivoX;
     float objetivoY;
@@ -40,6 +42,8 @@ private:
     float cooldownDisparo;
     float tiempoEntreDisparos;
     float cooldownGolpe;
+    float cooldownSalto;
+    float tiempoAturdido;
 
     // memoria de aprendizaje
     static constexpr size_t MAX_ZONAS_MEMORIA = 5;
@@ -65,12 +69,16 @@ public:
     // aprendizaje agente
     void aprenderZonaEvasion(float xEvasion);
 
-    // conserva lo aprendido asi cambie de nivel
+    // conserva lo aprendido asi muera indy y reinicie el nivel
     void reiniciarParaNuevoIntento(float xInicial, float yInicial);
-
+    // Metodo para aturdir al capataz
+    void recibirDano(int cantidad) override;
     // estados capataz
+    void setEnSuelo(bool estado) { enSuelo = estado; }
+
     EstadoCapataz getEstado() const { return estadoActual; }
     bool estaSospechando() const { return enZonaSospecha; }
+    bool estaEnSuelo() const { return enSuelo; }
     int getDireccion() const { return direccionPatrulla; }
 };
 
