@@ -17,7 +17,11 @@ MainWindow::MainWindow(QWidget *parent)
     nivel1(nullptr),
     nivel2(nullptr),
     dificultadActual(Dificultad::NORMAL),
-    nivelActivo(0) {
+    nivelActivo(0),
+    saludAnterior(100),
+    pergaminosAnteriores(0),
+    palancasAnteriores(0),
+    proyectilesAnterioresN2(0){
 
     ui->setupUi(this);
 
@@ -37,7 +41,9 @@ MainWindow::MainWindow(QWidget *parent)
     cargarFondos();
     cargarSprites();
 
-    // Iniciar en la página 0 (Menú Principal)
+    configurarAudio();
+
+    // Iniciar en la página 0 (Menu Principal)
     ui->stackedWidget->setCurrentIndex(0);
 
     //Focus de acciones de los botones
@@ -58,13 +64,13 @@ MainWindow::~MainWindow() {
     delete ui;
 }
 
-// ============================================================================
-// CARGA DE FONDOS Y SPRITES CON LAS RUTAS EXACTAS DE TU .QRC
-// ============================================================================
+
+// CARGA DE FONDOS Y SPRITES CON LAS RUTAS EXACTAS .QRC
+
 void MainWindow::cargarFondos() {
     scrollRioY = 0.0f;
 
-    // Fondo Nivel 1 (Río Putumayo)
+    // Fondo Nivel 1 (Rio Putumayo)
     QPixmap pixRio(":/0. Fondo Nivel I.png");
     if (pixRio.isNull()) {
         pixRio = QPixmap(1536, 1024);
@@ -80,7 +86,7 @@ void MainWindow::cargarFondos() {
     fondoN1_A->setPos(0, 0);
     fondoN1_B->setPos(0, -1024);
 
-    // Fondo Nivel 2 (La Chorrera - respeta el nombre exacto de tu .qrc)
+    // Fondo Nivel 2 (La Chorrera)
     QPixmap pixChorrera(":/0. Fondo inivel II.png");
     if (pixChorrera.isNull()) {
         pixChorrera = QPixmap(1536, 1024);
@@ -106,7 +112,7 @@ void MainWindow::cargarSprites() {
     sprites["tronco_izq"]     = QPixmap(":/00.Tronco izq.png");
     sprites["remolino"]       = QPixmap(":/00. Remolino.png");
 
-    // --- Ítems y HUD ---
+    // --- items ---
     sprites["corazon"]        = QPixmap(":/0. Corazon.png");
     sprites["salud_capataz"]  = QPixmap(":/0. SaludCapataz.png");
     sprites["palanca_izq"]    = QPixmap(":/0. Palancaizq.png");
@@ -149,9 +155,9 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     if (ui->viewNivel2) ui->viewNivel2->fitInView(escenaN2->sceneRect(), Qt::KeepAspectRatio);
 }
 
-// ============================================================================
+
 // TRANSICIONES ENTRE PANTALLAS (QStackedWidget)
-// ============================================================================
+
 void MainWindow::on_btnNormal_clicked() {
     dificultadActual = Dificultad::NORMAL;
     iniciarNivel1();
@@ -166,6 +172,10 @@ void MainWindow::iniciarNivel1() {
     if (!nivel1) nivel1 = new GestorNivel1(dificultadActual);
     else nivel1->reiniciar(dificultadActual);
 
+    saludAnterior = 100;
+    pergaminosAnteriores = 0;
+    if (!musicaFondo->isPlaying()) musicaFondo->play();
+
     nivelActivo = 1;
     dirBalsaX = 0;
     teclasPresionadas.clear();
@@ -178,6 +188,11 @@ void MainWindow::iniciarNivel1() {
 void MainWindow::iniciarNivel2() {
     if (!nivel2) nivel2 = new GestorNivel2(dificultadActual);
     else nivel2->reiniciar(dificultadActual);
+
+    saludAnterior = 100;
+    palancasAnteriores = 0;
+    proyectilesAnterioresN2 = 0;
+    if (!musicaFondo->isPlaying()) musicaFondo->play();
 
     nivelActivo = 2;
     teclasPresionadas.clear();
@@ -193,6 +208,7 @@ void MainWindow::mostrarPantallaFinal(const QString &mensaje) {
     teclasPresionadas.clear();
     ui->lblResultadoFinal->setText(mensaje);
     ui->stackedWidget->setCurrentIndex(3);
+    musicaFondo->stop();
 }
 
 void MainWindow::on_btnReintentar_clicked() {
@@ -208,11 +224,12 @@ void MainWindow::on_btnVolverMenu_clicked() {
     nivelActivo = 0;
     teclasPresionadas.clear();
     ui->stackedWidget->setCurrentIndex(0);
+    musicaFondo->stop();
 }
 
-// ============================================================================
+
 // BUCLE PRINCIPAL DEL JUEGO Y CONTROL DE TECLADO
-// ============================================================================
+
 void MainWindow::actualizarJuego() {
     const float dt = 0.016f;
     contadorFrames++;
@@ -255,7 +272,7 @@ void MainWindow::actualizarJuego() {
         if (nivel2->getEstado() == EstadoNivel::VICTORIA) {
             mostrarPantallaFinal("¡Prisioneros liberados! Has escapado de La Chorrera.");
         } else if (nivel2->getEstado() == EstadoNivel::DERROTA_SALUD) {
-            mostrarPantallaFinal("¡Has caído en La Chorrera! Inténtalo de nuevo.");
+            mostrarPantallaFinal("¡Has caido en La Chorrera! Intentalo de nuevo.");
         }
     }
 }
@@ -270,9 +287,13 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
         }
         if (event->key() == Qt::Key_E) {
             nivel2->intentarUsarLatigo();
+            if (nivel2->getJugador()->estaUsandoPendulo()) {
+                fxLatigo->play();
+            }
         }
         if (event->key() == Qt::Key_J || event->key() == Qt::Key_F) {
             nivel2->atacarJugador();
+            fxLatigo->play();
         }
     }
 }
@@ -281,9 +302,9 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event) {
     if (event->isAutoRepeat()) return;
     teclasPresionadas.remove(event->key());
 }
-// ============================================================================
-// FUNCIONES DE RENDERIZADO CON SPRITES REALES
-// ============================================================================
+
+// FUNCIONES DE RENDERIZADO DE LOS SPRITES
+
 void MainWindow::limpiarItemsFrame(QGraphicsScene *escena, QList<QGraphicsItem*> &lista) {
     for (QGraphicsItem *item : lista) {
         escena->removeItem(item);
@@ -309,7 +330,8 @@ void MainWindow::dibujarNivel1() {
     if (scrollRioY >= 1024.0f) scrollRioY -= 1024.0f;
     fondoN1_A->setPos(0, scrollRioY);
     fondoN1_B->setPos(0, scrollRioY - 1024.0f);
-    // 2. Actualizar HUD superior
+
+    // 2. Actualizar parte superior de  la pantalla
     const IndianaJones *indy = nivel1->getJugador();
     ui->barraSaludN1->setValue(indy->getSalud());
     int segTotales = static_cast<int>(std::ceil(nivel1->getTiempoRestante()));
@@ -320,6 +342,24 @@ void MainWindow::dibujarNivel1() {
                                      .arg(nivel1->getPergaminosRecolectados())
                                      .arg(nivel1->getPergaminosObjetivo()));
     limpiarItemsFrame(escenaN1, itemsFrameN1);
+
+    //2.1 efectos de sonido proyectiles, golpes, pergaminos y corazones
+    int saludActual = indy->getSalud();
+    uint8_t pergaminosActuales = nivel1->getPergaminosRecolectados();
+
+    // Sonido de golpe (impacto de tronco o bala desde la orilla)
+    if (saludActual < saludAnterior) {
+        fxGolpe->play();
+    }
+    // Sonido de item (recogió un corazón de curación o un pergamino)
+    if (saludActual > saludAnterior || pergaminosActuales > pergaminosAnteriores) {
+        fxItem->play();
+    }
+
+    saludAnterior = saludActual;
+    pergaminosAnteriores = pergaminosActuales;
+
+
     // 3. Obstáculos (Troncos MOA con inclinación alterna y Remolinos giratorios)
     for (const Obstaculo *obs : nivel1->getObstaculos()) {
         if (!obs->estaActiva()) continue;
@@ -333,7 +373,7 @@ void MainWindow::dibujarNivel1() {
                 itemsFrameN1.append(item);
             }
         } else {
-            // Alterna sprite del tronco según la fase de animación
+            // Alterna sprite del tronco segun la fase de animación
             int faseTronco = (contadorFrames / 18) % 3;
             QString claveTronco = (faseTronco == 0) ? "tronco_izq"
                                   : (faseTronco == 1) ? "tronco_centro" : "tronco_der";
@@ -345,6 +385,7 @@ void MainWindow::dibujarNivel1() {
             }
         }
     }
+
     // 4. Recolectables (Corazones y Pergaminos)
     for (const ObjetoRecolectable *rec : nivel1->getRecolectables()) {
         if (!rec->estaActiva()) continue;
@@ -369,7 +410,7 @@ void MainWindow::dibujarNivel1() {
             dibujarTrayectoriaPredictiva(escenaN1, itemsFrameN1, proj);
         }
     }
-    // 6. Balsa de Indiana Jones (según dirección o estado Enfurecido/Impacto)
+    // 6. Balsa de Indiana Jones (segun dirección o estado Enfurecido/Impacto)
     QString claveBalsa = "balsa_frente";
     if (indy->esEnfurecido()) {
         claveBalsa = "balsa_impacto";
@@ -389,14 +430,41 @@ void MainWindow::dibujarNivel2() {
     if (!nivel2) return;
     const IndianaJones *indy = nivel2->getJugador();
     const CapatazMayor *capataz = nivel2->getCapataz();
-    // 1. Actualizar HUD superior
+    // 1. Actualizar parte superior
     ui->barraSaludN2->setValue(indy->getSalud());
     ui->barraSaludCapataz->setValue(capataz->estaActiva() ? capataz->getSalud() : 0);
     ui->lblPalancasN2->setText(QString("Palancas: %1 / %2")
                                    .arg(nivel2->getPalancasActivadas())
                                    .arg(nivel2->getTotalPalancas()));
     limpiarItemsFrame(escenaN2, itemsFrameN2);
-    // 2. Puerta de escape iluminada a la derecha cuando las 3 palancas están hacia la derecha
+
+    // 1.1 Efectos de sonido disparo, golpe, corazon y palanca
+    int saludActual = indy->getSalud();
+    uint8_t palancasActuales = nivel2->getPalancasActivadas();
+    size_t proyectilesActuales = nivel2->getProyectiles().size();
+
+    if (proyectilesActuales > proyectilesAnterioresN2 &&
+        capataz && capataz->getEstado() == EstadoCapataz::ATAQUE_A_DISTANCIA) {
+        fxDisparo->play();
+    }
+
+    if (saludActual < saludAnterior) {
+        fxGolpe->play();
+    }
+
+    if (saludActual > saludAnterior) {
+        fxItem->play();
+    }
+
+    if (palancasActuales > palancasAnteriores) {
+        fxPalanca->play();
+    }
+
+    saludAnterior = saludActual;
+    palancasAnteriores = palancasActuales;
+    proyectilesAnterioresN2 = proyectilesActuales;
+
+    // 2. Puerta de escape iluminada a la derecha cuando las 3 palancas estan hacia la derecha
     if (nivel2->estaPuertaAbierta()) {
         auto *puerta = escenaN2->addRect(1435, 520, 88, 140,
                                          QPen(Qt::green, 4), QBrush(QColor(50, 255, 100, 110)));
@@ -422,7 +490,7 @@ void MainWindow::dibujarNivel2() {
             }
         }
     }
-    // 4. Proyectiles (balas del Capataz + gotas de látex hirviendo)
+    // 4. Proyectiles (balas del Capataz + gotas de latex hirviendo)
     for (const Proyectil *proj : nivel2->getProyectiles()) {
         if (!proj->estaActiva()) continue;
         auto *gota = escenaN2->addEllipse(proj->getX(), proj->getY(), proj->getAncho(), proj->getAlto(),
@@ -432,7 +500,7 @@ void MainWindow::dibujarNivel2() {
             dibujarTrayectoriaPredictiva(escenaN2, itemsFrameN2, proj);
         }
     }
-    // 5. Capataz Mayor animado según su estado de IA
+    // 5. Capataz Mayor animado segun su estado de IA
     if (capataz && capataz->estaActiva()) {
         bool capMiraIzq = (capataz->getDireccion() < 0);
         QString claveCap = "cap_parado";
@@ -451,7 +519,7 @@ void MainWindow::dibujarNivel2() {
             itemsFrameN2.append(spriteCap);
         }
     }
-    // 6. Cuerda del látigo si Indy está colgado en péndulo
+    // 6. Cuerda del latigo si Indy esta colgado en pendulo
     if (indy->estaUsandoPendulo()) {
         float indyCentroX = indy->getX() + indy->getAncho() * 0.5f;
         float indyCentroY = indy->getY() + 10.0f;
@@ -493,4 +561,33 @@ void MainWindow::dibujarNivel2() {
         auto *latigo = escenaN2->addLine(xInicio, yLatigo, xFin, yLatigo, QPen(QColor(180, 120, 60), 5));
         itemsFrameN2.append(latigo);
     }
+}
+
+void MainWindow::configurarAudio() {
+    // 1. Musica de fondo en volumen bajo (20%) y en bucle infinito
+    musicaFondo = new QSoundEffect(this);
+    musicaFondo->setSource(QUrl("qrc:/00. musica_fondo.wav"));
+    musicaFondo->setLoopCount(QSoundEffect::Infinite);
+    musicaFondo->setVolume(0.20f);
+
+    // 2. Efectos de sonido de eventos
+    fxDisparo = new QSoundEffect(this);
+    fxDisparo->setSource(QUrl("qrc:/00. sonido_disparo.wav"));
+    fxDisparo->setVolume(0.75f);
+
+    fxGolpe = new QSoundEffect(this);
+    fxGolpe->setSource(QUrl("qrc:/00. sonido_golpe.wav"));
+    fxGolpe->setVolume(0.80f);
+
+    fxItem = new QSoundEffect(this);
+    fxItem->setSource(QUrl("qrc:/00. sonido_item.wav"));
+    fxItem->setVolume(0.75f);
+
+    fxLatigo = new QSoundEffect(this);
+    fxLatigo->setSource(QUrl("qrc:/00. sonido_latigo.wav"));
+    fxLatigo->setVolume(0.80f);
+
+    fxPalanca = new QSoundEffect(this);
+    fxPalanca->setSource(QUrl("qrc:/00. sonido_palanca.wav"));
+    fxPalanca->setVolume(0.85f);
 }

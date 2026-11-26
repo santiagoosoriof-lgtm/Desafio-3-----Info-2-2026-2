@@ -29,5 +29,11 @@
         <file>00. Indy camina1.png</file>
         <file>00. Indy camina2.png</file>
         <file>00. pergamino.png</file>
+        <file>00. musica_fondo.wav</file>
+        <file>00. sonido_disparo.wav</file>
+        <file>00. sonido_golpe.wav</file>
+        <file>00. sonido_item.wav</file>
+        <file>00. sonido_latigo.wav</file>
+        <file>00. sonido_palanca.wav</file>
     </qresource>
 </RCC>

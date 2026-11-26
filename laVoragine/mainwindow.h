@@ -12,6 +12,7 @@
 #include <QHash>
 #include <QSet>
 #include <QList>
+#include <QSoundEffect>
 #include "GestorNivel1.h"
 #include "GestorNivel2.h"
 
@@ -52,16 +53,30 @@ private:
     QGraphicsPixmapItem *fondoN2;
     float scrollRioY;
 
-    // Caché de sprites en memoria (búsqueda O(1) sin lecturas de disco)
+    // lista de sprites en memoria
     QHash<QString, QPixmap> sprites;
     uint32_t contadorFrames;
     int dirBalsaX; // -1 izq, 0 frente, 1 der
 
-    // Listas de ítems dinámicos por frame
+    // Listas de items dinamicos por frame
     QList<QGraphicsItem*> itemsFrameN1;
     QList<QGraphicsItem*> itemsFrameN2;
 
-    // Capas lógicas
+    // Sistema de Audio archivos independientes ---
+    QSoundEffect *musicaFondo;
+    QSoundEffect *fxDisparo;
+    QSoundEffect *fxGolpe;
+    QSoundEffect *fxItem;
+    QSoundEffect *fxLatigo;
+    QSoundEffect *fxPalanca;
+
+    // Registro del frame anterior para detectar eventos exactos
+    int saludAnterior;
+    uint8_t pergaminosAnteriores;
+    uint8_t palancasAnteriores;
+    size_t proyectilesAnterioresN2;
+
+    // Capas logicas
     GestorNivel1 *nivel1;
     GestorNivel2 *nivel2;
     Dificultad dificultadActual;
@@ -69,7 +84,7 @@ private:
 
     QSet<int> teclasPresionadas;
 
-    // Métodos internos
+    // Metodos internos
     void cargarFondos();
     void cargarSprites();
     QPixmap obtenerSprite(const QString &clave, int ancho, int alto, bool voltearHorizontal = false);
@@ -82,6 +97,8 @@ private:
     void dibujarTrayectoriaPredictiva(QGraphicsScene *escena, QList<QGraphicsItem*> &lista, const Proyectil *proj);
     void dibujarNivel1();
     void dibujarNivel2();
+
+    void configurarAudio();
 };
 
 #endif // MAINWINDOW_H
