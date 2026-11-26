@@ -25,7 +25,7 @@ GestorNivel2::GestorNivel2(Dificultad dif)
     jugador = new IndianaJones(80.0f, 580.0f, 52.0f, 76.0f);
 
     // El Capataz Mayor patrulla toda la pasarela derecha (1105 a 1520)
-    capataz = new CapatazMayor(1280.0f, 580.0f, 56.0f, 80.0f, 1105.0f, 1520.0f);
+    capataz = new CapatazMayor(1280.0f, 580.0f, 56.0f, 80.0f, 1065.0f, 1520.0f);
 }
 
 GestorNivel2::~GestorNivel2() {
@@ -43,10 +43,10 @@ void GestorNivel2::inicializarEscenario() {
 
     // coordenadas ganchos
     puntosAnclaje = {{
-        {  162.0f, 250.0f, 430.0f }, // Argolla izquierda
-        {  366.0f, 250.0f, 440.0f }, // Argolla centro-izquierda (cruza primer abismo)
-        { 1068.0f, 270.0f, 450.0f }, // Barra colgante derecha (cruza segundo abismo)
-        { 1360.0f, 270.0f, 420.0f }  // Trapecio derecho (evadir al Capataz)
+        {  162.0f, 250.0f, 450.0f }, // Argolla izquierda
+        {  366.0f, 250.0f, 480.0f }, // Argolla centro-izquierda (cruza primer abismo)
+        { 1068.0f, 270.0f, 580.0f }, // Barra colgante derecha (cruza segundo abismo)
+        { 1360.0f, 270.0f, 450.0f }  // Trapecio derecho (evadir al Capataz)
     }};
 
     // coordenadas 3 palancas
@@ -239,7 +239,7 @@ void GestorNivel2::saltarJugador() {
         jugador->soltarLatigo();
         indyEnSuelo = false;
     } else if (indyEnSuelo) {
-        jugador->saltar(390.0f);
+        jugador->saltar(510.0f);
         indyEnSuelo = false;
     }
 }
@@ -335,6 +335,6 @@ void GestorNivel2::reiniciar(Dificultad nuevaDif) {
     if (capataz) {
         capataz->reiniciarParaNuevoIntento(1280.0f, 580.0f);
     } else {
-        capataz = new CapatazMayor(1280.0f, 580.0f, 56.0f, 80.0f, 1105.0f, 1520.0f);
+        capataz = new CapatazMayor(1280.0f, 580.0f, 56.0f, 80.0f, 1065.0f, 1520.0f);
     }
 }

@@ -93,7 +93,7 @@ bool IndianaJones::intentarEnganchar(const PuntoAnclaje& punto) {
 
     if (distancia <= punto.radioAlcance && distancia > 5.0f && dy > 0.0f) {
         float anguloInicial = std::atan2(dx, dy);
-        engancharLatigo(punto.x, punto.x, distancia, anguloInicial);
+        engancharLatigo(punto.x, punto.y, distancia, anguloInicial);
         return true;
     }
     return false;
