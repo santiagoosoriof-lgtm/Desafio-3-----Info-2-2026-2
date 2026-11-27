@@ -44,13 +44,21 @@ private:
     float cooldownGolpe;
     float cooldownSalto;
     float tiempoAturdido;
+    float timerAtravesarPlataforma;
 
     // memoria de aprendizaje
-    static constexpr size_t MAX_ZONAS_MEMORIA = 5;
+    static constexpr size_t MAX_ZONAS_MEMORIA = 10;
     std::array<float, MAX_ZONAS_MEMORIA> zonasEvasionX;
     uint8_t totalZonasAprendidas;
     uint8_t indiceEscritura;
+    uint8_t indiceZonaObjetivo;
+    float timerCambioZona;
     bool enZonaSospecha;
+
+    float multVelPersecucion;
+    int danoGolpeCercano;
+    int danoDisparo;
+    float duracionAturdido;
 
     // agente autonomo
     void percibir(const IndianaJones* indy, bool indyHaciendoRuido);
@@ -62,6 +70,8 @@ public:
     CapatazMayor(float x, float y, float w, float h, float limIzq, float limDer);
 
     void actualizarFisica(float dt) override;
+
+    void configurarDificultad(bool esDificil);
 
     // Accion dispara o no
     Proyectil* actualizarIA(float dt, IndianaJones* indy, bool indyHaciendoRuido = false);
@@ -80,6 +90,7 @@ public:
     bool estaSospechando() const { return enZonaSospecha; }
     bool estaEnSuelo() const { return enSuelo; }
     int getDireccion() const { return direccionPatrulla; }
+    bool puedeAtravesarPlataforma() const { return timerAtravesarPlataforma > 0.0f; }
 };
 
 #endif // CAPATAZMAYOR_H

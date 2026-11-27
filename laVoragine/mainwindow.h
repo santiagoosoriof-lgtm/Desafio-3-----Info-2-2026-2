@@ -68,6 +68,7 @@ private:
     GestorNivel2 *nivel2;
     Dificultad dificultadActual;
     int nivelActivo; // 0 = Menú/Final, 1 = Nivel 1, 2 = Nivel 2
+    int ultimoNivelJugado;
 
     // Sistema de Audio archivos independientes ---
     QSoundEffect *musicaFondo;

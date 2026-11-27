@@ -18,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
     nivel2(nullptr),
     dificultadActual(Dificultad::NORMAL),
     nivelActivo(0),
+    ultimoNivelJugado(1),
     saludAnterior(100),
     pergaminosAnteriores(0),
     palancasAnteriores(0),
@@ -184,6 +185,7 @@ void MainWindow::iniciarNivel1() {
     if (!musicaFondo->isPlaying()) musicaFondo->play();
 
     nivelActivo = 1;
+    ultimoNivelJugado = 1;
     dirBalsaX = 0;
     teclasPresionadas.clear();
     ui->stackedWidget->setCurrentIndex(1);
@@ -202,6 +204,7 @@ void MainWindow::iniciarNivel2() {
     if (!musicaFondo->isPlaying()) musicaFondo->play();
 
     nivelActivo = 2;
+    ultimoNivelJugado = 2;
     teclasPresionadas.clear();
     ui->stackedWidget->setCurrentIndex(2);
     ui->viewNivel2->fitInView(escenaN2->sceneRect(), Qt::KeepAspectRatio);
@@ -221,7 +224,7 @@ void MainWindow::mostrarPantallaFinal(const QString &mensaje) {
 }
 
 void MainWindow::on_btnReintentar_clicked() {
-    if (nivel2 != nullptr && nivel2->getEstado() != EstadoNivel::EN_CURSO) {
+    if (ultimoNivelJugado == 2) {
         iniciarNivel2();
     } else {
         iniciarNivel1();
@@ -290,7 +293,7 @@ void MainWindow::actualizarJuego() {
         } else if (nivel2->getEstado() == EstadoNivel::DERROTA_SALUD) {
             mostrarPantallaFinal("¡CAPTURADO EN LA CHORRERA!\n\n"
                                  "Los hombres de la Casa Arana han frustrado el rescate,\n"
-                                 "el Capataz ya teconoce... ¿Te atreves a desafiarlo de nuevo?");
+                                 "el Capataz ya te conoce... ¿Te atreves a desafiarlo de nuevo?");
         }
     }
 }

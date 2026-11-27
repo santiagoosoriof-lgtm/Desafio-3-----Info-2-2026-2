@@ -20,6 +20,8 @@ private:
     float tiempoEnfurecido;
     float tiempoAtaque;
     float cooldownAtaque;
+    float tiempoInvulnerable;
+
     static constexpr float GRAVEDAD = 450.0f;            // Escala en píxeles/s^2
     static constexpr float LONGITUD_LATIGO_FIJA = 180.0f; // Largo fijo del latigo al columpiarse
 

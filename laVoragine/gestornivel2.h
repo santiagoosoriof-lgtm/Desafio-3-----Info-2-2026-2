@@ -58,6 +58,7 @@ private:
     float intervaloCalderos;
     float velInicialLatex;
     float tiempoLimitePalancas;
+    float timerRegistroZona = 0.0f;
 
     // Metodos de la clase
     void inicializarEscenario();

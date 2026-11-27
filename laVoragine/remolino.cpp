@@ -1,5 +1,6 @@
 #include "remolino.h"
 #include <cmath>
+#include <algorithm>
 
 Remolino::Remolino(float x, float y, float w, float h, float fuerza, float radio, float velRio, float altoVentana)
     : Obstaculo(x, y, w, h, false),
@@ -21,11 +22,25 @@ void Remolino::actualizarFisica(float dt) {
 }
 
 void Remolino::aplicarEfecto(Personaje* objetivo) {
-    (void)objetivo;
+    if (!objetivo || !activa) return;
+
+    float centroRemolinoX = posX + ancho * 0.5f;
+    float centroRemolinoY = posY + alto * 0.5f;
+    float centroObjX = objetivo->getX() + objetivo->getAncho() * 0.5f;
+    float centroObjY = objetivo->getY() + objetivo->getAlto() * 0.5f;
+
+    float dx = centroRemolinoX - centroObjX;
+    float dy = centroRemolinoY - centroObjY;
+    float distancia = std::sqrt(dx * dx + dy * dy);
+
+    // Solo hace daño si llega al nucleo interno del remolino (radio de 35 px)
+    if (distancia <= 35.0f) {
+        objetivo->recibirDano(15);
+    }
 }
 
 void Remolino::aplicarAtraccion(IndianaJones* indy, float dt) {
-    if (!indy || !activa || indy->esEnfurecido()) return;
+    if (!indy || !activa) return;
 
     float centroRemolinoX = posX + ancho * 0.5f;
     float centroRemolinoY = posY + alto * 0.5f;
@@ -37,11 +52,13 @@ void Remolino::aplicarAtraccion(IndianaJones* indy, float dt) {
     float distancia = std::sqrt(dx * dx + dy * dy);
 
     if (distancia > 5.0f && distancia <= radioInfluencia) {
-        float aceleracion = constanteFuerza / distancia;
-        float ax = aceleracion * (dx / distancia);
-        float ay = aceleracion * (dy / distancia);
+        float distanciaEfectiva = std::max(distancia, 55.0f);
+        float velArrastre = std::min(constanteFuerza / distanciaEfectiva, 235.0f);
 
-        indy->mover(ax * dt, ay * dt);
+        float vx = velArrastre * (dx / distancia);
+        float vy = velArrastre * (dy / distancia);
+
+        indy->mover(vx * dt, vy * dt);
     }
 }
 

@@ -8,9 +8,9 @@ CapatazMayor::CapatazMayor(float x, float y, float w, float h, float limIzq, flo
     limitePatrullaIzq(limIzq),
     limitePatrullaDer(limDer),
     direccionPatrulla(1),
-    radioVisionBase(550.0f),
-    radioVisionActual(300.0f),
-    radioAuditivo(450.0f),
+    radioVisionBase(260.0f),
+    radioVisionActual(260.0f),
+    radioAuditivo(210.0f),
     rangoAtaqueCercano(65.0f),
     jugadorDetectado(false),
     jugadorColgando(false),
@@ -22,10 +22,41 @@ CapatazMayor::CapatazMayor(float x, float y, float w, float h, float limIzq, flo
     cooldownGolpe(0.0f),
     cooldownSalto(0.0f),
     tiempoAturdido(0.0f),
+    timerAtravesarPlataforma(0.0f),
     totalZonasAprendidas(0),
     indiceEscritura(0),
-    enZonaSospecha(false) {
+    indiceZonaObjetivo(0),
+    timerCambioZona(0.0f),
+    enZonaSospecha(false),
+    multVelPersecucion(1.85f),
+    danoGolpeCercano(20),
+    danoDisparo(15),
+    duracionAturdido(2.0f){
     zonasEvasionX.fill(0.0f);
+}
+
+void CapatazMayor::configurarDificultad(bool esDificil) {
+    if (esDificil) {
+        radioVisionBase = 360.0f;
+        radioAuditivo = 300.0f;
+        tiempoEntreDisparos = 1.0f;
+        multVelPersecucion = 2.35f;   // Mas rápido que Indy corriendo (258 px/s vs 230 px/s)
+        danoGolpeCercano = 35;
+        danoDisparo = 25;
+        duracionAturdido = 1.3f;
+        saludMaxima = 90;             // Requiere 3 golpes de latigo para aturdirse
+        salud = saludMaxima;
+    } else {
+        radioVisionBase = 200.0f;
+        radioAuditivo = 210.0f;
+        tiempoEntreDisparos = 1.8f;
+        multVelPersecucion = 1.85f;
+        danoGolpeCercano = 20;
+        danoDisparo = 20;
+        duracionAturdido = 2.0f;
+        saludMaxima = 60;             // Requiere 2 golpes de látigo para aturdirse
+        salud = saludMaxima;
+    }
 }
 
 void CapatazMayor::actualizarFisica(float dt) {
@@ -41,6 +72,7 @@ Proyectil* CapatazMayor::actualizarIA(float dt, IndianaJones* indy, bool indyHac
     if (cooldownDisparo > 0.0f) cooldownDisparo -= dt;
     if (cooldownGolpe > 0.0f) cooldownGolpe -= dt;
     if (cooldownSalto > 0.0f) cooldownSalto -= dt;
+    if (timerAtravesarPlataforma > 0.0f) timerAtravesarPlataforma -= dt;
 
     if (estadoActual == EstadoCapataz::ATURDIDO) {
         tiempoAturdido -= dt;
@@ -77,8 +109,12 @@ void CapatazMayor::percibir(const IndianaJones* indy, bool indyHaciendoRuido) {
     verificarZonasAprendidas();
     radioVisionActual = enZonaSospecha ? (radioVisionBase * 1.25f) : radioVisionBase;
 
-    bool visto = (distanciaJugador <= radioVisionActual);
-    bool escuchado = (indyHaciendoRuido && distanciaJugador <= radioAuditivo);
+    // Solo ve si Indy está frente a el
+    bool enConoFrontal = (dx * direccionPatrulla >= -20.0f);
+    bool enMismaAltura = (std::abs(dy) < 160.0f);
+
+    bool visto = (enConoFrontal && enMismaAltura && distanciaJugador <= radioVisionActual);
+    bool escuchado = (indyHaciendoRuido && distanciaJugador <= radioAuditivo && std::abs(dy) < 180.0f);
 
     jugadorDetectado = (visto || escuchado);
 }
@@ -121,37 +157,104 @@ Proyectil* CapatazMayor::actuar(float dt, IndianaJones* indy) {
     }
 
     case EstadoCapataz::PATRULLA: {
-        // En zona sospechosa camina más lento (70%) vigilando con más detalle
-        float factorVel = enZonaSospecha ? 0.7f : 1.0f;
+        float limIzqActivo = limitePatrullaIzq;
+        float limDerActivo = limitePatrullaDer;
+
+        // Si ya aprendió zonas donde Indy pasa tiempo, centra su patrulla en ellas
+        if (totalZonasAprendidas > 0) {
+            timerCambioZona += dt;
+            if (timerCambioZona >= 8.0f) {
+                timerCambioZona = 0.0f;
+                indiceZonaObjetivo = (indiceZonaObjetivo + 1) % totalZonasAprendidas;
+            }
+
+            float centroZona = zonasEvasionX[indiceZonaObjetivo];
+            limIzqActivo = std::max(20.0f, centroZona - 130.0f);
+            limDerActivo = std::min(1510.0f, centroZona + 130.0f);
+        }
+
+        // En zona sospechosa camina más lento (75%)
+        float factorVel = enZonaSospecha ? 0.75f : 0.9f;
         velX = direccionPatrulla * velocidadBase * factorVel;
 
-        if (posX <= limitePatrullaIzq) {
-            posX = limitePatrullaIzq;
+        // Gira al llegar a los límites de la zona
+        if (posX <= limIzqActivo) {
             direccionPatrulla = 1;
-        } else if (posX + ancho >= limitePatrullaDer) {
-            posX = limitePatrullaDer - ancho;
+        } else if (posX + ancho >= limDerActivo) {
             direccionPatrulla = -1;
+        }
+
+        // Evita salir de los bordes exteriores del mapa
+        if (posX < 20.0f) { posX = 20.0f; direccionPatrulla = 1; }
+        if (posX + ancho > 1516.0f) { posX = 1516.0f - ancho; direccionPatrulla = -1; }
+
+        float piesCapatazY = posY + alto;
+        bool enPlataformaSuperior = (piesCapatazY < 600.0f);
+        bool enNivelMedio = (piesCapatazY >= 640.0f && piesCapatazY <= 680.0f);
+        bool enPlataformaInferior = (piesCapatazY > 790.0f);
+        bool sobrePlataformasCentro = (centroCapatazX >= 515.0f && centroCapatazX <= 775.0f);
+
+        //  Si está arriba y pasa por el centro, baja a las plataformas principales
+        if (enSuelo && enPlataformaSuperior && sobrePlataformasCentro) {
+            timerAtravesarPlataforma = 0.45f;
+            enSuelo = false;
+            posY += 20.0f;
+            velY = 180.0f;
+        }
+        //  Si está en la plataforma más baja y necesita salir del centro, salta para subir
+        else if (enSuelo && cooldownSalto <= 0.0f && enPlataformaInferior &&
+                 ((posX < 535.0f && direccionPatrulla == -1) || (posX + ancho > 755.0f && direccionPatrulla == 1))) {
+            velY = -495.0f;
+            enSuelo = false;
+            cooldownSalto = 0.85f;
+        }
+        //  Si está en el nivel medio, salta los abismos para cruzar entre pasarelas
+        else {
+            bool bordeAbismo = enNivelMedio && (
+                                   (posX > 265.0f && posX < 305.0f && direccionPatrulla == 1) ||
+                                   (posX > 510.0f && posX < 545.0f && direccionPatrulla == -1) ||
+                                   (posX > 740.0f && posX < 780.0f && direccionPatrulla == 1) ||
+                                   (posX > 1095.0f && posX < 1130.0f && direccionPatrulla == -1));
+
+            if (enSuelo && cooldownSalto <= 0.0f && bordeAbismo) {
+                velY = -495.0f;
+                enSuelo = false;
+                cooldownSalto = 0.85f;
+            }
         }
         return nullptr;
     }
 
     case EstadoCapataz::PERSECUCION: {
         direccionPatrulla = (objetivoX >= centroCapatazX) ? 1 : -1;
-        velX = direccionPatrulla * (velocidadBase * 1.85f);
+        velX = direccionPatrulla * (velocidadBase * multVelPersecucion);
 
         // Limitar solo a los bordes exteriores de la pantalla (0 a 1536)
         if (posX < 0.0f) { posX = 0.0f; velX = 0.0f; }
         if (posX + ancho > 1536.0f) { posX = 1536.0f - ancho; velX = 0.0f; }
 
-        // Salta automáticamente si Indy está en una plataforma más alta o si va a cruzar un abismo
-        bool indyMasArriba = (objetivoY < posY - 40.0f);
-        bool bordeAbismo = (posX < 340.0f && direccionPatrulla == 1) ||
-                           (posX > 490.0f && posX < 525.0f && direccionPatrulla == -1) ||
-                           (posX > 720.0f && posX < 770.0f && direccionPatrulla == 1) ||
-                           (posX > 1055.0f && posX < 1090.0f && direccionPatrulla == -1);
+        float piesCapatazY = posY + alto;
+        bool enNivelMedio = (piesCapatazY >= 640.0f && piesCapatazY <= 680.0f);
 
-        if (enSuelo && cooldownSalto <= 0.0f && (indyMasArriba || bordeAbismo)) {
-            velY = -495.0f; // Impulso de salto para cruzar abismos o subir plataformas
+        bool indyMasArriba = (objetivoY < posY - 40.0f);
+        bool indyMasAbajo  = (objetivoY > piesCapatazY + 30.0f);
+        bool sobrePlataformasCentro = (centroCapatazX >= 515.0f && centroCapatazX <= 775.0f);
+
+        bool bordeAbismo = enNivelMedio && (
+                               (posX > 265.0f && posX < 305.0f && direccionPatrulla == 1) ||
+                               (posX > 510.0f && posX < 545.0f && direccionPatrulla == -1) ||
+                               (posX > 740.0f && posX < 780.0f && direccionPatrulla == 1) ||
+                               (posX > 1095.0f && posX < 1130.0f && direccionPatrulla == -1));
+
+        if (enSuelo && indyMasAbajo && sobrePlataformasCentro && piesCapatazY < 790.0f) {
+            // Baja atravesando la plataforma hacia la intermedia o inferior
+            timerAtravesarPlataforma = 0.45f;
+            enSuelo = false;
+            posY += 20.0f;
+            velY = 180.0f;
+        } else if (enSuelo && cooldownSalto <= 0.0f && (indyMasArriba || bordeAbismo)) {
+            // Salta si Indy está más arriba o si necesita cruzar un abismo
+            velY = -495.0f;
             enSuelo = false;
             cooldownSalto = 0.85f;
         }
@@ -162,8 +265,8 @@ Proyectil* CapatazMayor::actuar(float dt, IndianaJones* indy) {
         velX = 0.0f;
         direccionPatrulla = (objetivoX >= centroCapatazX) ? 1 : -1;
         if (cooldownGolpe <= 0.0f) {
-            indy->recibirDano(20);
-            cooldownGolpe = 1.0f;
+            indy->recibirDano(danoGolpeCercano);
+            cooldownGolpe = 0.85f;
         }
         return nullptr;
     }
@@ -193,7 +296,7 @@ Proyectil* CapatazMayor::actuar(float dt, IndianaJones* indy) {
             const float PI = 3.14159265f;
             float anguloGrados = std::atan2(vy, vx) * (180.0f / PI);
 
-            return new Proyectil(origenX, origenY, 18.0f, 18.0f, v0, anguloGrados, g, 15, 1536.0f, 1024.0f);
+            return new Proyectil(origenX, origenY, 18.0f, 18.0f, v0, anguloGrados, g, danoDisparo, 1536.0f, 1024.0f);
         }
         return nullptr;
     }
@@ -242,10 +345,13 @@ void CapatazMayor::reiniciarParaNuevoIntento(float xInicial, float yInicial) {
 }
 
 void CapatazMayor::recibirDano(int cantidad) {
-    (void) cantidad;
-    if (estadoActual == EstadoCapataz::ATURDIDO) return; // Inmune mientras está noqueado
+    if (estadoActual == EstadoCapataz::ATURDIDO) return;
 
-    velX = 0.0f;
-    estadoActual = EstadoCapataz::ATURDIDO;
-    tiempoAturdido = 2.0f; // Queda sin reaccionar durante 5 segundos
+    salud -= cantidad;
+    if (salud <= 0) {
+        salud = 0;
+        velX = 0.0f;
+        estadoActual = EstadoCapataz::ATURDIDO;
+        tiempoAturdido = duracionAturdido;
+    }
 }

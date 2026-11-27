@@ -30,8 +30,8 @@ public:
     static constexpr float ANCHO_MUNDO = 1536.0f;
     static constexpr float ALTO_MUNDO = 1024.0f;
     // Márgenes de las orillas de selva en tu sprite de río (ajusta si es necesario)
-    static constexpr float ORILLA_IZQ = 260.0f;
-    static constexpr float ORILLA_DER = 1276.0f;
+    static constexpr float ORILLA_IZQ = 425.0f;
+    static constexpr float ORILLA_DER = 1110.0f;
 
 private:
     IndianaJones* jugador;
@@ -66,7 +66,7 @@ private:
     void liberarMemoriaTotal();
 
 public:
-    GestorNivel1(Dificultad dif = Dificultad::NORMAL, uint8_t metaPergaminos = 5);
+    GestorNivel1(Dificultad dif = Dificultad::NORMAL, uint8_t metaPergaminos = 10);
     ~GestorNivel1();
 
     // Evita copias accidentales de punteros dinámicos (Regla de Tres/Cinco en C++)

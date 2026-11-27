@@ -29,6 +29,7 @@ GestorNivel2::GestorNivel2(Dificultad dif)
 
     // El Capataz Mayor patrulla toda la pasarela derecha (1105 a 1520)
     capataz = new CapatazMayor(1280.0f, 580.0f, 56.0f, 80.0f, 20.0f, 1510.0f);
+    configurarDificultad();
 }
 
 GestorNivel2::~GestorNivel2() {
@@ -65,13 +66,21 @@ void GestorNivel2::inicializarEscenario() {
 }
 
 void GestorNivel2::configurarDificultad() {
-    if (dificultad == Dificultad::NORMAL) {
+    bool esDificil = (dificultad == Dificultad::DIFICIL);
+    if (!esDificil) {
         intervaloCalderos = 2.8f;
         velInicialLatex = 560.0f;
+        vidasRestantes = 2;
+        tiempoLimitePalancas = 10.0f;
     } else {
-        // En Difícil, los calderos hierven más rápido y lanzan gotas más altas
-        intervaloCalderos = 1.7f;
-        velInicialLatex = 660.0f;
+        intervaloCalderos = 1.15f; // Calderos hierven casi 3 veces más rápido
+        velInicialLatex = 680.0f;
+        vidasRestantes = 1;        // Solo 2 vidas en Difícil
+        tiempoLimitePalancas = 8.0f; // 8 segundos para encadenar las 3 palancas
+    }
+
+    if (capataz) {
+        capataz->configurarDificultad(esDificil);
     }
 }
 
@@ -104,6 +113,15 @@ void GestorNivel2::actualizar(float dt) {
     // Caida de plataforma bajo comando
     if (timerAtravesarPlataforma > 0.0f) {
         timerAtravesarPlataforma -= dt;
+    }
+
+    float timerMuestreoZona = 0.0f;
+    if (indyEnSuelo) {
+        timerMuestreoZona += dt;
+        if (timerMuestreoZona >= 2.5f) {
+            timerMuestreoZona = 0.0f;
+            capataz->aprenderZonaEvasion(jugador->getX() + jugador->getAncho() * 0.5f);
+        }
     }
 
     indyEnSuelo = false;
@@ -145,9 +163,14 @@ void GestorNivel2::actualizar(float dt) {
     if (balaCapataz != nullptr) {
         proyectiles.push_back(balaCapataz);
     }
+
     // capataz va a las plataformas
-    bool capSuelo = resolverColisionesPlataformas(capataz, yCapAnterior);
+    bool capSuelo = false;
+    if (!capataz->puedeAtravesarPlataforma()) {
+        capSuelo = resolverColisionesPlataformas(capataz, yCapAnterior);
+    }
     capataz->setEnSuelo(capSuelo);
+
     // si cae reaparece
     if (capataz->getY() > Y_ABISMO_MORTAL) {
         capataz->setPosicion(720.0f, 400.0f);
@@ -215,7 +238,7 @@ void GestorNivel2::actualizar(float dt) {
                 }
             }
             palancasActivadas = 0;
-            tiempoLimitePalancas = 10.0f;
+            tiempoLimitePalancas = (dificultad == Dificultad::DIFICIL) ? 8.0f : 10.0f;
         }
     }
 
@@ -261,11 +284,18 @@ bool GestorNivel2::resolverColisionesPlataformas(Personaje* personaje, float yAn
 }
 
 void GestorNivel2::lanzarGotaLatex(float origenX, float origenY) {
-    // angulo casi vertical (entre 75° y 105°) para que suba y caiga en parabola sobre las pasarelas
     float anguloGrados = 75.0f + static_cast<float>(std::rand() % 31);
     proyectiles.push_back(new Proyectil(origenX, origenY, 16.0f, 16.0f,
                                         velInicialLatex, anguloGrados, 450.0f, 15,
                                         ANCHO_MUNDO, ALTO_MUNDO, true));
+
+    // En modo Difícil, cada caldero escupe una segunda gota en dirección opuesta
+    if (dificultad == Dificultad::DIFICIL) {
+        float segundoAngulo = (anguloGrados > 90.0f) ? 76.0f : 104.0f;
+        proyectiles.push_back(new Proyectil(origenX, origenY, 16.0f, 16.0f,
+                                            velInicialLatex * 0.92f, segundoAngulo, 450.0f, 20,
+                                            ANCHO_MUNDO, ALTO_MUNDO, true));
+    }
 }
 
 // --- CONTROLES DE ENTRADA DEL JUGADOR ---
@@ -299,7 +329,7 @@ void GestorNivel2::saltarJugador() {
         jugador->soltarLatigo();
         indyEnSuelo = false;
     } else if (indyEnSuelo || std::abs(jugador->getVelY()) < 1.0f) {
-        jugador->saltar(485.0f);
+        jugador->saltar(380.0f);
         indyEnSuelo = false;
     }
 }

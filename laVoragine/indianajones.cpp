@@ -16,9 +16,14 @@ IndianaJones::IndianaJones(float x, float y, float w, float h)
     velAngular(0.0f),
     tiempoEnfurecido(0.0f),
     tiempoAtaque(0.0f),
-    cooldownAtaque(0.0f){}
+    cooldownAtaque(0.0f),
+    tiempoInvulnerable(0.0f){}
 
 void IndianaJones::actualizarFisica(float dt) {
+    if (tiempoInvulnerable > 0.0f) {
+        tiempoInvulnerable -= dt;
+        if (tiempoInvulnerable < 0.0f) tiempoInvulnerable = 0.0f;
+    }
 
     if (cooldownAtaque > 0.0f) cooldownAtaque -= dt;
     if (estaAtacando) {
@@ -70,9 +75,10 @@ void IndianaJones::actualizarFisica(float dt) {
 }
 
 void IndianaJones::recibirDano(int cantidad) {
-    if (modoEnfurecido) return; // Inmune mientras esta enfurecido
+    if (modoEnfurecido || tiempoInvulnerable > 0.0f) return; // Inmune mientras esta enfurecido
 
     Personaje::recibirDano(cantidad);
+    tiempoInvulnerable = 1.5f; //inmunidad entre golpes
 
     // Si sigue vivo pero con salud crítica (<= 30%), se enfurece automáticamente
     if (activa && salud > 0 && salud <= 30 && puedeEnfurecerse) {
@@ -90,7 +96,7 @@ void IndianaJones::curar(int cantidad) {
 
 void IndianaJones::activarModoEnfurecido() {
     modoEnfurecido = true;
-    tiempoEnfurecido = 10.0f;
+    tiempoEnfurecido = 4.0f;
 }
 
 bool IndianaJones::intentarEnganchar(const PuntoAnclaje& punto) {
