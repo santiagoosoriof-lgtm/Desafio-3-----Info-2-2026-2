@@ -1,0 +1,46 @@
+<RCC>
+    <qresource prefix="/">
+        <file>0. SaludCapataz.png</file>
+        <file>0. Corazon.png</file>
+        <file>0. Fondo inivel II.png</file>
+        <file>0. Fondo Nivel I.png</file>
+        <file>0. Palancader.png</file>
+        <file>00. Capataz atacado.png</file>
+        <file>00. Capataz camina1.png</file>
+        <file>00. Capataz camina2.png</file>
+        <file>00. Capataz camina3.png</file>
+        <file>00. Capataz lanzaproyectil.png</file>
+        <file>00. Capataz parado.png</file>
+        <file>00. Capataz prepara proyectil.png</file>
+        <file>00. Casa Capataz.png</file>
+        <file>00. Indy parado.png</file>
+        <file>00. Remolino.png</file>
+        <file>00. Tronco.png</file>
+        <file>00.Pendulo centro.png</file>
+        <file>00.Penduloder.png</file>
+        <file>00.Penduloizq.png</file>
+        <file>00.Tronco derecha.png</file>
+        <file>00.Tronco izq.png</file>
+        <file>0. Balsa de frente.png</file>
+        <file>0. Balsa derecha.png</file>
+        <file>0. Balsa impacto.png</file>
+        <file>0. Balsa izquierda.png</file>
+        <file>0. Palancaizq.png</file>
+        <file>00. Indy camina1.png</file>
+        <file>00. Indy camina2.png</file>
+        <file>00. pergamino.png</file>
+        <file>00. musica_fondo.wav</file>
+        <file>00. sonido_disparo.wav</file>
+        <file>00. sonido_golpe.wav</file>
+        <file>00. sonido_item.wav</file>
+        <file>00. sonido_latigo.wav</file>
+        <file>00. sonido_palanca.wav</file>
+        <file>00. Indy cara.png</file>
+        <file>0. Fondo transicion.png</file>
+        <file>0. Balsa de frentepoder.png</file>
+        <file>0. Fondo Menu.png</file>
+        <file>00. Indy camina1poder.png</file>
+        <file>00. Indy camina2poder.png</file>
+        <file>Icono_juego.ico</file>
+    </qresource>
+</RCC>
